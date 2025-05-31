@@ -9,11 +9,9 @@ fun getPhoneCode(countryCode: String): String {
         if (phoneNumber != null) {
             "+${phoneNumber.countryCode}"
         } else {
-            // Handle the case where getExampleNumberForType returns null
             ""
         }
     } catch (e: NumberFormatException) {
-        // Handle the exception (e.g., log an error)
         ""
     }
 }

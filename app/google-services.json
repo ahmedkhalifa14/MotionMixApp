@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "179564153901",
+    "project_id": "videoplayerapp-64f8a",
+    "storage_bucket": "videoplayerapp-64f8a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:179564153901:android:1ae50d0e79e9f26ae87ca4",
+        "android_client_info": {
+          "package_name": "com.ahmedkhalifa.motionmix"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVqX7GHTQ273pVgJUCBLgsg_n5exF9Ky8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:179564153901:android:83a5748509bc4307e87ca4",
+        "android_client_info": {
+          "package_name": "com.example.videoplayerapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVqX7GHTQ273pVgJUCBLgsg_n5exF9Ky8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
