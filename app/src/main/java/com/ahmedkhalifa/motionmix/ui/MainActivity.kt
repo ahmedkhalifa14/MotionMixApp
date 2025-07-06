@@ -3,8 +3,8 @@ package com.ahmedkhalifa.motionmix.ui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.navigation.compose.rememberNavController
-import com.ahmedkhalifa.motionmix.ui.graphs.RootNavigationGraph
+
+import com.ahmedkhalifa.motionmix.ui.screens.home.ReelsScreen
 import com.ahmedkhalifa.motionmix.ui.theme.MotionMixTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -14,7 +14,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MotionMixTheme {
-                RootNavigationGraph(navController = rememberNavController())
+                ReelsScreen()
+               // RootNavigationGraph(navController = rememberNavController())
             }
         }
     }

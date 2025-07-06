@@ -89,11 +89,10 @@ dependencies {
     // Accompanist
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.36.0")
 
-    // ExoPlayer
-    implementation("com.google.android.exoplayer:exoplayer:2.19.1")
-    implementation("com.google.android.exoplayer:exoplayer-core:2.19.1")
-    implementation("com.google.android.exoplayer:exoplayer-ui:2.19.1")
-
+// ExoPlayer (Media3)
+    implementation("androidx.media3:media3-exoplayer:1.3.1")
+    implementation("androidx.media3:media3-ui:1.3.1")
+    implementation("androidx.media3:media3-exoplayer-hls:1.3.1")
     // Coil
     implementation("io.coil-kt:coil-compose:2.7.0")
 
@@ -104,4 +103,9 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+
+    implementation( "androidx.compose.material:material-icons-extended:1.7.0")
+
+    implementation ("androidx.compose.runtime:runtime:1.7.0")
+    implementation ("androidx.media3:media3-exoplayer-dash:1.4.0")
 }
