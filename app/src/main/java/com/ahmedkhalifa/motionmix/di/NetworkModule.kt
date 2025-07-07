@@ -1,6 +1,7 @@
 package com.ahmedkhalifa.motionmix.di
 
-import com.ahmedkhalifa.motionmix.data.remote_data_source.FirebaseService
+import com.ahmedkhalifa.motionmix.data.remote_data_source.FirebaseAuthenticationService
+import com.ahmedkhalifa.motionmix.data.remote_data_source.VideosUploadingUsingFirebaseCloudStorage
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -27,14 +28,20 @@ object NetworkModule {
     @Singleton
     fun provideFirebaseStorage(): FirebaseStorage = FirebaseStorage.getInstance()
 
+    @Provides
+    @Singleton
+    fun provideFirebaseAuthenticationService(
+        firebaseAuth: FirebaseAuth,
+    ): FirebaseAuthenticationService =
+        FirebaseAuthenticationService(firebaseAuth)
+
 
     @Provides
     @Singleton
-    fun provideFirebaseService(
-        auth: FirebaseAuth,
-        fireStore: FirebaseFirestore,
-        firebaseStorage: FirebaseStorage
-    ): FirebaseService =
-        FirebaseService(auth, fireStore, firebaseStorage)
+    fun provideVideosUploadingUsingFirebaseCloudStorage(
+        firebaseStorage: FirebaseStorage,
+        firebaseAuth: FirebaseAuth,
+    ):VideosUploadingUsingFirebaseCloudStorage=
+        VideosUploadingUsingFirebaseCloudStorage(firebaseStorage,firebaseAuth)
 
 }

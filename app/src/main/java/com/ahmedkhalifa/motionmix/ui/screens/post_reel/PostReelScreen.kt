@@ -1,7 +1,9 @@
 package com.ahmedkhalifa.motionmix.ui.screens.post_reel
 
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -10,6 +12,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -44,7 +49,7 @@ fun PostReelScreen(viewModel: UploadViewModel = viewModel()) {
         if (!isGranted) {
             showPermissionDialog = true
             coroutineScope.launch {
-                snackbarHostState.showSnackbar("Notification permission required for upload")
+                snackbarHostState.showSnackbar("Notification permission required for upload progress")
             }
         }
     }
@@ -61,15 +66,55 @@ fun PostReelScreen(viewModel: UploadViewModel = viewModel()) {
         }
     }
 
+    PostReelScreenContent(
+        uploadStatus = uploadStatus,
+        showPermissionDialog = showPermissionDialog,
+        snackbarHostState = snackbarHostState,
+        onSelectVideo = { videoPickerLauncher.launch("video/*") },
+        onRetryUpload = { videoPickerLauncher.launch("video/*") },
+        onResetUpload = { viewModel.resetUploadStatus() },
+        onOpenSettings = {
+            showPermissionDialog = false
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = android.net.Uri.fromParts("package", context.packageName, null)
+            }
+            context.startActivity(intent)
+        },
+        onDismissPermissionDialog = { showPermissionDialog = false }
+    )
+}
+
+@Composable
+fun PostReelScreenContent(
+    uploadStatus: UploadStatus,
+    showPermissionDialog: Boolean,
+    snackbarHostState: SnackbarHostState,
+    onSelectVideo: () -> Unit,
+    onRetryUpload: () -> Unit,
+    onResetUpload: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onDismissPermissionDialog: () -> Unit
+) {
     // Permission denial dialog
     if (showPermissionDialog) {
         AlertDialog(
-            onDismissRequest = { showPermissionDialog = false },
+            onDismissRequest = onDismissPermissionDialog,
             title = { Text("Permission Required") },
             text = { Text("This app requires notification permission to show upload progress. Please grant it in Settings.") },
             confirmButton = {
-                Button(onClick = { showPermissionDialog = false }) {
-                    Text("OK")
+                Button(
+                    onClick = onOpenSettings,
+                    modifier = Modifier.semantics { contentDescription = "Open Settings" }
+                ) {
+                    Text("Open Settings")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = onDismissPermissionDialog,
+                    modifier = Modifier.semantics { contentDescription = "Cancel" }
+                ) {
+                    Text("Cancel")
                 }
             }
         )
@@ -82,30 +127,87 @@ fun PostReelScreen(viewModel: UploadViewModel = viewModel()) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(16.dp),
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Button(onClick = { videoPickerLauncher.launch("video/*") }) {
+                // Upload button
+                Button(
+                    onClick = onSelectVideo,
+                    modifier = Modifier
+                        .fillMaxWidth(0.8f)
+                        .semantics { contentDescription = "Choose video to upload" }
+                ) {
                     Text("Choose Video to Upload")
                 }
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = uploadStatus.message,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                if (uploadStatus.isComplete) {
-                    Text(
-                        text = "Upload completed successfully!",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                } else if (uploadStatus.isFailed) {
-                    Text(
-                        text = "Upload failed: ${uploadStatus.message}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+
+                // Progress or status display
+                when {
+                    uploadStatus.isComplete -> {
+                        Text(
+                            text = "Upload completed successfully!",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Button(
+                            onClick = onResetUpload,
+                            modifier = Modifier.semantics { contentDescription = "Start new upload" }
+                        ) {
+                            Text("Start New Upload")
+                        }
+                    }
+                    uploadStatus.isFailed -> {
+                        Text(
+                            text = "Upload failed: ${uploadStatus.message}",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Button(
+                            onClick = onRetryUpload,
+                            modifier = Modifier.semantics { contentDescription = "Retry upload" }
+                        ) {
+                            Text("Retry Upload")
+                        }
+                    }
+                    uploadStatus.progress > 0 -> {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = uploadStatus.message,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            LinearProgressIndicator(
+                                progress = { uploadStatus.progress / 100f },
+                                modifier = Modifier
+                                    .fillMaxWidth(0.8f)
+                                    .padding(top = 8.dp)
+                                    .semantics { contentDescription = "Upload progress" }
+                            )
+                        }
+                    }
+                    else -> {
+                        Text(
+                            text = "Select a video to start uploading",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
+    )
+}
+
+@Composable
+@Preview(showSystemUi = true, showBackground = true)
+fun PreviewPostReelScreenContent() {
+    PostReelScreenContent(
+        uploadStatus = UploadStatus(),
+        showPermissionDialog = false,
+        snackbarHostState = SnackbarHostState(),
+        onSelectVideo = {},
+        onRetryUpload = {},
+        onResetUpload = {},
+        onOpenSettings = {},
+        onDismissPermissionDialog = {}
     )
 }

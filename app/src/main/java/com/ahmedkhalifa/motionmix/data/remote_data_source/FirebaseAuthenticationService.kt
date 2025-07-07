@@ -19,10 +19,8 @@ import kotlinx.coroutines.withTimeout
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-class FirebaseService @Inject constructor(
+class FirebaseAuthenticationService @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
-    private val fireStore: FirebaseFirestore,
-    private val firebaseStorage: FirebaseStorage,
 ) {
 
     /*  Authentication  */
@@ -31,7 +29,6 @@ class FirebaseService @Inject constructor(
         firebaseAuth.createUserWithEmailAndPassword(email, password).await()
         firebaseAuth.currentUser?.sendEmailVerification()
     }
-
     suspend fun loginWithEmailAndPassword(email: String, password: String): LoginResult {
         return try {
             firebaseAuth.signInWithEmailAndPassword(email, password).await()
@@ -50,7 +47,6 @@ class FirebaseService @Inject constructor(
             LoginResult.Error(e.message ?: "An Error Occurred")
         }
     }
-
     // with phone number
     suspend fun sendVerificationCode(phoneNumber: String): String {
         return withContext(Dispatchers.Main) {
@@ -106,14 +102,11 @@ class FirebaseService @Inject constructor(
         }
         task.await()
     }
-
     //signInWithGoogle
-
     suspend fun signInWithGoogle(idToken: String): AuthResult {
         val authCredential = com.google.firebase.auth.GoogleAuthProvider.getCredential(idToken, null)
         return firebaseAuth.signInWithCredential(authCredential).await()
     }
-
     //logout
     fun logout() = firebaseAuth.signOut()
 

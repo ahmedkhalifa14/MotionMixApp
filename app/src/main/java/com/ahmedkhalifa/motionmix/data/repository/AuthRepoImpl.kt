@@ -3,7 +3,7 @@ package com.ahmedkhalifa.motionmix.data.repository
 import com.ahmedkhalifa.motionmix.common.utils.LoginResult
 import com.ahmedkhalifa.motionmix.common.utils.Resource
 import com.ahmedkhalifa.motionmix.common.utils.Utils.tryCatch
-import com.ahmedkhalifa.motionmix.data.remote_data_source.FirebaseService
+import com.ahmedkhalifa.motionmix.data.remote_data_source.FirebaseAuthenticationService
 import com.ahmedkhalifa.motionmix.domain.repo.auth.AuthRepo
 import com.google.firebase.auth.AuthResult
 import kotlinx.coroutines.Dispatchers
@@ -11,7 +11,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class AuthRepoImpl @Inject constructor(
-    private val fireBaseService: FirebaseService,
+    private val fireBaseService: FirebaseAuthenticationService,
 ) : AuthRepo {
     override suspend fun registerWithEmailAndPassword(
         email: String,
