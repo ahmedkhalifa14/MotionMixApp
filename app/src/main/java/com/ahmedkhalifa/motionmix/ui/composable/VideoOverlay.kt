@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import androidx.annotation.OptIn
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -16,7 +17,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -38,8 +43,10 @@ import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.ahmedkhalifa.motionmix.data.model.Reel
 import androidx.compose.ui.draw.alpha
+import androidx.media3.common.util.UnstableApi
 import com.ahmedkhalifa.motionmix.common.ExoPlayerManager
 
+@OptIn(UnstableApi::class)
 @Composable
 fun VideoOverlay(reel: Reel, isLoading: Boolean = false, modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -172,8 +179,8 @@ fun ActionButton(
         Icons.Filled.Face -> "Comment button, $text comments"
         Icons.Filled.Share -> "Share button, $text shares"
         Icons.Filled.MoreVert -> "More options"
-        Icons.Filled.VolumeUp -> "Unmute video"
-        Icons.Filled.VolumeOff -> "Mute video"
+        Icons.AutoMirrored.Filled.VolumeUp -> "Unmute video"
+        Icons.AutoMirrored.Filled.VolumeOff -> "Mute video"
         else -> ""
     }
 

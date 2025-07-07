@@ -1,72 +1,66 @@
 package com.ahmedkhalifa.motionmix.ui.screens.home
 
-import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.media3.common.PlaybackException
-import androidx.media3.common.Player
-import androidx.media3.common.util.UnstableApi
-import com.ahmedkhalifa.motionmix.common.ExoPlayerManager
 import com.ahmedkhalifa.motionmix.data.model.Reel
 import com.ahmedkhalifa.motionmix.data.model.getSampleVideos
 import com.ahmedkhalifa.motionmix.ui.composable.VideoOverlay
 import com.ahmedkhalifa.motionmix.ui.composable.VideoPlayerView
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
 import kotlinx.coroutines.delay
 
 @UnstableApi
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ReelsScreen() {
+    val context = LocalContext.current
+
     val videos = remember { getSampleVideos() }
     val pagerState = rememberPagerState(pageCount = { videos.size })
     val currentPlayingIndex by remember { derivedStateOf { pagerState.currentPage } }
-    val context = LocalContext.current
-    val TAG = "ReelsScreen"
 
-    LaunchedEffect(currentPlayingIndex) {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
-        val preloadCount = 1 // Fixed to 1 for all networks
 
-        // Preload next video
-        val nextIndex = currentPlayingIndex + 1
-        if (nextIndex < videos.size) {
-            ExoPlayerManager.preloadMedia(context, videos[nextIndex].mediaUrl)
-            Log.d(TAG, "Preloading video at index $nextIndex: ${videos[nextIndex].mediaUrl}")
-        }
-
-        // Clean up preloaded items
-        ExoPlayerManager.clearExcessMediaItems(context)
-    }
 
     VerticalPager(
         state = pagerState,
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize(),
         key = { videos[it].id }
     ) { page ->
         val video = videos[page]
         val shouldPlay = page == currentPlayingIndex
+
+        LaunchedEffect(page) {
+            val nextPage = page + 1
+            if (nextPage < videos.size) {
+                val nextVideo = videos[nextPage]
+                val preloader = ExoPlayer.Builder(context).build().apply {
+                    setMediaItem(MediaItem.fromUri(nextVideo.mediaUrl))
+                    prepare()
+                    pause()
+                }
+                delay(5000)
+                preloader.release()
+                Log.d("ReelsScreen", "Preloaded and released: ${nextVideo.mediaUrl}")
+            }
+        }
+
         VideoPlayerScreen(reel = video, shouldPlay = shouldPlay)
     }
 }
@@ -75,42 +69,65 @@ fun ReelsScreen() {
 @Composable
 fun VideoPlayerScreen(reel: Reel, shouldPlay: Boolean) {
     val context = LocalContext.current
-    val exoPlayer = ExoPlayerManager.getPlayer(context)
     val progress = remember { mutableStateOf(0f) }
     val isLoading = remember { mutableStateOf(true) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
     val TAG = "VideoPlayerScreen"
 
-    // Update progress less frequently
-    LaunchedEffect(exoPlayer, shouldPlay) {
+    val player = remember {
+        ExoPlayer.Builder(context).build().apply {
+            setMediaItem(MediaItem.fromUri(reel.mediaUrl))
+            prepare()
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            player.release()
+            Log.d(TAG, "ExoPlayer released for ${reel.mediaUrl}")
+        }
+    }
+
+    LaunchedEffect(shouldPlay) {
+        if (shouldPlay) player.play() else player.pause()
+    }
+
+    LaunchedEffect(player, shouldPlay) {
         if (shouldPlay) {
             while (true) {
-                if (exoPlayer.isPlaying) {
-                    val duration = exoPlayer.duration
-                    val position = exoPlayer.currentPosition
+                if (player.isPlaying) {
+                    val duration = player.duration
+                    val position = player.currentPosition
                     progress.value = if (duration > 0) position.toFloat() / duration else 0f
                     isLoading.value = false
                 }
-                delay(1000) // Update every 1s
+                delay(1000)
             }
         }
     }
 
-    DisposableEffect(exoPlayer, shouldPlay) {
+    DisposableEffect(player, shouldPlay) {
         val listener = object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
                 isLoading.value = state == Player.STATE_BUFFERING || state == Player.STATE_IDLE
-                Log.d(TAG, "Playback state for ${reel.mediaUrl}: ${when (state) {
-                    Player.STATE_IDLE -> "IDLE"
-                    Player.STATE_BUFFERING -> "BUFFERING"
-                    Player.STATE_READY -> "READY"
-                    Player.STATE_ENDED -> "ENDED"
-                    else -> "UNKNOWN"
-                }}")
+                Log.d(
+                    TAG, "Playback state for ${reel.mediaUrl}: ${
+                        when (state) {
+                            Player.STATE_IDLE -> "IDLE"
+                            Player.STATE_BUFFERING -> "BUFFERING"
+                            Player.STATE_READY -> "READY"
+                            Player.STATE_ENDED -> "ENDED"
+                            else -> "UNKNOWN"
+                        }
+                    }"
+                )
             }
 
             override fun onPlayerError(error: PlaybackException) {
-                Log.e(TAG, "Playback error for ${reel.mediaUrl}: ${error.message}, code: ${error.errorCode}")
+                Log.e(
+                    TAG,
+                    "Playback error for ${reel.mediaUrl}: ${error.message}, code: ${error.errorCode}"
+                )
                 errorMessage.value = when {
                     error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS ->
                         "رابط الفيديو غير صالح. اضغط لإعادة المحاولة."
@@ -131,18 +148,17 @@ fun VideoPlayerScreen(reel: Reel, shouldPlay: Boolean) {
             }
         }
 
-        exoPlayer.addListener(listener)
+        player.addListener(listener)
         onDispose {
-            exoPlayer.removeListener(listener)
-            Log.d(TAG, "Player listener removed")
+            player.removeListener(listener)
+            Log.d(TAG, "Player listener removed for ${reel.mediaUrl}")
         }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
         VideoPlayerView(
-            mediaUrl = reel.mediaUrl,
+            player = player,
             thumbnailUrl = reel.thumbnailUrl,
-            shouldPlay = shouldPlay,
             isLoading = isLoading,
             errorMessage = errorMessage
         )

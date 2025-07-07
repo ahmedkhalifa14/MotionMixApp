@@ -31,7 +31,7 @@ import kotlin.math.min
 object ExoPlayerManager {
     private var exoPlayer: ExoPlayer? = null
     private var currentMediaItem: MediaItem? = null
-    private const val MAX_PRELOADED_ITEMS = 1 // Reduced to 1 for all networks
+    private const val MAX_PRELOADED_ITEMS = 1
     private const val TAG = "ExoPlayerManager"
     private var simpleCache: SimpleCache? = null
     private var cacheDataSourceFactory: CacheDataSource.Factory? = null
@@ -69,14 +69,16 @@ object ExoPlayerManager {
             val maxBitrate = when {
                 capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true -> 6_000_000 // 6 Mbps
                 capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) == true -> 300_000 // 300 kbps
-                else -> 150_000 // Fallback
+                else -> 100_000 // Fallback
             }
 
             val trackSelector = DefaultTrackSelector(context).apply {
-                setParameters(buildUponParameters()
-                    .setMaxVideoBitrate(maxBitrate)
-                    .setForceLowestBitrate(false)
-                    .setAllowVideoMixedMimeTypeAdaptiveness(true))
+                setParameters(
+                    buildUponParameters()
+                        .setMaxVideoBitrate(maxBitrate)
+                        .setForceLowestBitrate(false)
+                        .setAllowVideoMixedMimeTypeAdaptiveness(true)
+                )
             }
 
             exoPlayer = ExoPlayer.Builder(context)
@@ -84,8 +86,8 @@ object ExoPlayerManager {
                 .setLoadControl(
                     DefaultLoadControl.Builder()
                         .setBufferDurationsMs(
-                            35000,  // minBufferMs - increased
-                            180000, // maxBufferMs - increased
+                            40000,  // minBufferMs - increased
+                            200000, // maxBufferMs - increased
                             3000,   // bufferForPlaybackMs
                             3000    // bufferForPlaybackAfterRebufferMs
                         )
@@ -113,6 +115,7 @@ object ExoPlayerManager {
                         Player.STATE_BUFFERING -> Log.d(TAG, "Buffering... Network: ${networkInfo?.typeName ?: "None"}, Speed: ${capabilities?.linkDownstreamBandwidthKbps ?: 0} kbps")
                         Player.STATE_READY -> Log.d(TAG, "Ready to play")
                         Player.STATE_ENDED -> Log.d(TAG, "Playback ended")
+                        Player.STATE_IDLE -> Log.d(TAG, "Player idle")
                     }
                 }
             })
@@ -128,6 +131,7 @@ object ExoPlayerManager {
         val newMediaItem = MediaItem.fromUri(mediaUrl)
 
         if (newMediaItem != currentMediaItem) {
+            resetPlayer()
             val mediaSource = buildMediaSource(newMediaItem)
             mainHandler.post {
                 player.setMediaSource(mediaSource)
@@ -143,15 +147,13 @@ object ExoPlayerManager {
             return true
         } catch (e: Exception) {
             Log.e(TAG, "Playback failed, attempt ${retryCount + 1}: ${e.message}", e)
-            if (retryCount < 2) {
+            if (retryCount < 3) {
                 Thread.sleep(min(1000L * (1 shl retryCount), 4000)) // Exponential backoff
                 mainHandler.post {
                     player.trackSelector?.parameters?.buildUpon()
-                        ?.setMaxVideoBitrate(150_000) // Force lower bitrate
+                        ?.setMaxVideoBitrate(100_000) // Force lower bitrate
                         ?.build()?.let {
-                            player.trackSelector?.setParameters(
-                                it
-                            )
+                            player.trackSelector?.setParameters(it)
                         }
                 }
                 return playMedia(context, mediaUrl, retryCount + 1)
@@ -164,7 +166,7 @@ object ExoPlayerManager {
     fun preloadMedia(context: Context, mediaUrl: String) {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
-        if (capabilities?.linkDownstreamBandwidthKbps ?: 0 < 150) {
+        if ((capabilities?.linkDownstreamBandwidthKbps ?: 0) < 100) {
             Log.d(TAG, "Skipping preload due to slow network: $mediaUrl")
             return
         }
@@ -216,6 +218,16 @@ object ExoPlayerManager {
     }
 
     @Synchronized
+    fun resetPlayer() {
+        mainHandler.post {
+            exoPlayer?.stop()
+            exoPlayer?.clearMediaItems()
+            currentMediaItem = null
+            Log.d(TAG, "Player reset: media items cleared")
+        }
+    }
+
+    @Synchronized
     fun releasePlayer() {
         mainHandler.post {
             exoPlayer?.release()
@@ -231,16 +243,13 @@ object ExoPlayerManager {
     @Synchronized
     fun clearExcessMediaItems(context: Context) {
         exoPlayer?.let { player ->
-            val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            val capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
-            val maxPreload = MAX_PRELOADED_ITEMS
-
             val currentIndex = player.currentMediaItemIndex
             val mediaItems = player.getMediaItems()
             val itemsToRemove = mutableListOf<Int>()
 
-            for (i in mediaItems.indices.reversed()) {
-                if (i < currentIndex || i > currentIndex + maxPreload) {
+            // Keep only the current and next item
+            for (i in mediaItems.indices) {
+                if (i != currentIndex && i != currentIndex + 1) {
                     itemsToRemove.add(i)
                 }
             }
@@ -254,4 +263,13 @@ object ExoPlayerManager {
     private fun Player.getMediaItems(): List<MediaItem> {
         return (0 until mediaItemCount).map { getMediaItemAt(it) }
     }
+
+    fun isCurrentlyPlaying(mediaUrl: String): Boolean {
+        return exoPlayer?.currentMediaItem?.localConfiguration?.uri.toString() == mediaUrl
+    }
+
 }
+
+
+
+
