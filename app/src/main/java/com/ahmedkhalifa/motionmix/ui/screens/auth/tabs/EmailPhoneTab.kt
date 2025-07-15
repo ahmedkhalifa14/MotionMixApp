@@ -27,11 +27,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.ahmedkhalifa.motionmix.R
 import com.ahmedkhalifa.motionmix.ui.composable.EmailPhoneTabHeader
 import com.ahmedkhalifa.motionmix.ui.theme.Montserrat
 import com.ahmedkhalifa.motionmix.ui.theme.MotionMixTheme
@@ -42,11 +44,12 @@ fun EmailPhoneTab(
     initialMode: String
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Phone", "Email / Username")
+    val tabs = listOf(stringResource(R.string.phone), stringResource(R.string.email_username))
     val tabIcons = listOf(Icons.Default.Phone, Icons.Default.Email)
     val authTypes = listOf("phone", "email")
 
-    Column(modifier = Modifier.fillMaxSize()
+    Column(modifier = Modifier
+        .fillMaxSize()
         .background(color = MaterialTheme.colorScheme.background)
         .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {

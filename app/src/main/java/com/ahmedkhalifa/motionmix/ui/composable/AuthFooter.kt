@@ -1,6 +1,7 @@
 package com.ahmedkhalifa.motionmix.ui.composable
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
@@ -37,6 +38,7 @@ fun AuthFooter(text1: String, text2: String, onClickAuth: () -> Unit) {
         },
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onClickAuth() }
             .background(FooterColor)
             .padding(20.dp),
         textAlign = TextAlign.Center,
@@ -44,7 +46,5 @@ fun AuthFooter(text1: String, text2: String, onClickAuth: () -> Unit) {
         fontWeight = FontWeight.SemiBold,
         fontFamily = Montserrat,
         fontSize = 14.sp,
-
-
     )
 }

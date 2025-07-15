@@ -1,46 +1,58 @@
 package com.ahmedkhalifa.motionmix.ui.screens.post_reel
 
-import android.app.Application
 import android.net.Uri
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ahmedkhalifa.motionmix.data.model.UploadStatus
-import com.ahmedkhalifa.motionmix.data.repository.VideoUploadRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import kotlinx.coroutines.tasks.await
+import java.util.UUID
 
-@HiltViewModel
-class UploadViewModel @Inject constructor(
-    private val videoUploadRepository: VideoUploadRepository,
-    application: Application
-) : AndroidViewModel(application) {
-
+class UploadViewModel : ViewModel() {
     private val _uploadStatus = MutableStateFlow(UploadStatus())
     val uploadStatus: StateFlow<UploadStatus> = _uploadStatus
 
-    init {
+    fun startUpload(videoUri: Uri) {
         viewModelScope.launch {
-            videoUploadRepository.uploadEvents.collect { event ->
+            try {
+                _uploadStatus.value = UploadStatus(progress = 0, message = "Starting upload...")
+
+                // Upload video to Firebase Storage
+                val storage = FirebaseStorage.getInstance()
+                val videoRef = storage.reference.child("videos/${UUID.randomUUID()}.mp4")
+                val uploadTask = videoRef.putFile(videoUri)
+
+                // Update progress
+                uploadTask.addOnProgressListener { taskSnapshot ->
+                    val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
+                    _uploadStatus.value = UploadStatus(progress = progress, message = "Uploading... $progress%")
+                }
+                val videoUriResult = uploadTask.await()
+                val mediaUrl = videoRef.downloadUrl.await().toString()
+                val thumbnailRef = storage.reference.child("thumbnails/${UUID.randomUUID()}.jpg")
+                val thumbnailUrl = mediaUrl
+
                 _uploadStatus.value = UploadStatus(
-                    progress = event.progress,
-                    isComplete = event.isComplete,
-                    isFailed = event.isFailed,
-                    message = event.message
+                    isComplete = true,
+                    progress = 100,
+                    message = "Upload completed",
+                    mediaUrl = mediaUrl,
+                    thumbnailUrl = thumbnailUrl
+                )
+            } catch (e: Exception) {
+                _uploadStatus.value = UploadStatus(
+                    isFailed = true,
+                    message = "Upload failed: ${e.message}",
+                    progress = 0
                 )
             }
         }
     }
 
-    fun startUpload(videoUri: Uri) {
-        videoUploadRepository.startUpload(videoUri)
-    }
-
     fun resetUploadStatus() {
         _uploadStatus.value = UploadStatus()
     }
-
-
 }

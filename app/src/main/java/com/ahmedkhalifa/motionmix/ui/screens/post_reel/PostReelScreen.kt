@@ -28,6 +28,7 @@ fun PostReelScreen(viewModel: UploadViewModel = viewModel()) {
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var showPermissionDialog by remember { mutableStateOf(false) }
+    var description by remember { mutableStateOf("") }
 
     val videoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -66,10 +67,32 @@ fun PostReelScreen(viewModel: UploadViewModel = viewModel()) {
         }
     }
 
+    // Save to Firestore when upload is complete
+    LaunchedEffect(uploadStatus) {
+        if (uploadStatus.isComplete && uploadStatus.mediaUrl != null && uploadStatus.thumbnailUrl != null) {
+            val result = saveReelToFirestore(
+                mediaUrl = uploadStatus.mediaUrl!!,
+                thumbnailUrl = uploadStatus.thumbnailUrl!!,
+                description = description
+            )
+            result.onSuccess {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Reel saved to Firestore")
+                }
+            }.onFailure { e ->
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Failed to save reel: ${e.message}")
+                }
+            }
+        }
+    }
+
     PostReelScreenContent(
         uploadStatus = uploadStatus,
         showPermissionDialog = showPermissionDialog,
         snackbarHostState = snackbarHostState,
+        description = description,
+        onDescriptionChange = { description = it },
         onSelectVideo = { videoPickerLauncher.launch("video/*") },
         onRetryUpload = { videoPickerLauncher.launch("video/*") },
         onResetUpload = { viewModel.resetUploadStatus() },
@@ -89,6 +112,8 @@ fun PostReelScreenContent(
     uploadStatus: UploadStatus,
     showPermissionDialog: Boolean,
     snackbarHostState: SnackbarHostState,
+    description: String,
+    onDescriptionChange: (String) -> Unit,
     onSelectVideo: () -> Unit,
     onRetryUpload: () -> Unit,
     onResetUpload: () -> Unit,
@@ -131,6 +156,17 @@ fun PostReelScreenContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // Description input field
+                TextField(
+                    value = description,
+                    onValueChange = onDescriptionChange,
+                    label = { Text("Description") },
+                    modifier = Modifier
+                        .fillMaxWidth(0.8f)
+                        .semantics { contentDescription = "Enter video description" },
+                    maxLines = 3
+                )
+
                 // Upload button
                 Button(
                     onClick = onSelectVideo,
@@ -204,6 +240,8 @@ fun PreviewPostReelScreenContent() {
         uploadStatus = UploadStatus(),
         showPermissionDialog = false,
         snackbarHostState = SnackbarHostState(),
+        description = "",
+        onDescriptionChange = {},
         onSelectVideo = {},
         onRetryUpload = {},
         onResetUpload = {},

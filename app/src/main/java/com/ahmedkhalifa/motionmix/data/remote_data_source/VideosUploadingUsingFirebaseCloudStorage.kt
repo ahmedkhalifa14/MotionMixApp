@@ -13,9 +13,9 @@ class VideosUploadingUsingFirebaseCloudStorage @Inject constructor(
 ) {
 
     fun uploadVideo(videoUri: Uri, listener: UploadProgressListener) {
-        //val userUid = firebaseAuth.currentUser?.uid ?: return
+        val userUid = firebaseAuth.currentUser?.uid ?: return
         val storageRef = firebaseStorage.reference
-            .child("videos/$65/${System.currentTimeMillis()}.mp4")
+            .child("reels/$userUid/${System.currentTimeMillis()}.mp4")
         val uploadTask = storageRef.putFile(videoUri)
         uploadTask.addOnProgressListener { taskSnapshot ->
             val progress =

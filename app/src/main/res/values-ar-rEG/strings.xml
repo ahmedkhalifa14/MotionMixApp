@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="use_phone_email_username">استخدم الهاتف / البريد الإلكتروني / اسم المستخدم</string>
+    <string name="continue_with_facebook">المتابعة باستخدام فيسبوك</string>
+    <string name="continue_with_google">المتابعة باستخدام جوجل</string>
+    <string name="continue_with_x">المتابعة باستخدام X</string>
+    <string name="continue_with_instagram">المتابعة باستخدام إنستجرام</string>
+    <string name="login_in_to_motionmix">تسجيل الدخول إلى MotionMix</string>
+    <string name="manage_your_account_check_notification_comment_on_videos_and_more">قم بإدارة حسابك، تحقق من الإشعارات، علق على الفيديوهات، والمزيد.</string>
+    <string name="by_continuing_you_agree_to_our">"من خلال المتابعة، فإنك توافق على "</string>
+    <string name="terms_of_service">"شروط الخدمة "</string>
+    <string name="and_acknowledge_that_you_have_read_our">"وتقر بأنك قرأت "</string>
+    <string name="privacy_policy">"سياسة الخصوصية "</string>
+    <string name="to_learn_how_we_collect_use_and_share_your_data">لتتعرف على كيفية جمعنا واستخدامنا ومشاركتنا لبياناتك.</string>
+    <string name="don_t_have_an_account">"ليس لديك حساب؟ "</string>
+    <string name="sign_up">إنشاء حساب</string>
+    <string name="sign_up_for_motionmix">إنشاء حساب في MotionMix</string>
+    <string name="create_a_profile_follow_other_accounts_make_your_own_videos_and_more">أنشئ ملفك الشخصي، تابع حسابات أخرى، أنشئ فيديوهاتك الخاصة، وأكثر.</string>
+    <string name="google_sign_in_loading">جاري تسجيل الدخول باستخدام جوجل</string>
+    <string name="google_sign_in_error">حدث خطأ في تسجيل الدخول باستخدام جوجل: %1$s</string>
+    <string name="google_sign_in_success">تم تسجيل الدخول بنجاح باستخدام جوجل: %1$s</string>
+    <string name="already_have_an_account">"هل لديك حساب بالفعل؟ "</string>
+    <string name="log_in">تسجيل الدخول</string>
+    <string name="search_country">ابحث عن الدولة</string>
+    <string name="select_country_region">اختر الدولة / المنطقة</string>
+    <string name="email_phone_tab_login">EMAIL_PHONE_TAB/تسجيل الدخول</string>
+    <string name="phone">الهاتف</string>
+    <string name="email_username">البريد الإلكتروني / اسم المستخدم</string>
+    <string name="we_will_send_an_email_to_verify_your_email_address">سوف نرسل رسالة تحقق إلى بريدك الإلكتروني</string>
+    <string name="create_password">إنشاء كلمة مرور</string>
+    <string name="enter_password">أدخل كلمة المرور</string>
+    <string name="_8_characters_20_max">• 8 أحرف كحد أدنى (20 كحد أقصى)</string>
+    <string name="_1_letter_1_number_1_special_character">• حرف واحد، رقم واحد، ورمز خاص (# ؟ ! @)</string>
+    <string name="strong_password">• كلمة مرور قوية</string>
+    <string name="_continue">متابعة</string>
+    <string name="verify">تحقق</string>
+    <string name="_20">+20</string>
+    <string name="phone_number">رقم الهاتف</string>
+    <string name="send_code">إرسال الرمز</string>
+</resources>

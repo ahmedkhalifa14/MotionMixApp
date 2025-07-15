@@ -9,34 +9,87 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.ahmedkhalifa.motionmix.R
+import com.ahmedkhalifa.motionmix.common.utils.AuthMethod
 import com.ahmedkhalifa.motionmix.ui.composable.AuthButton
 import com.ahmedkhalifa.motionmix.ui.composable.AuthFooter
 import com.ahmedkhalifa.motionmix.ui.composable.AuthFooterText
 import com.ahmedkhalifa.motionmix.ui.composable.AuthHeader
 import com.ahmedkhalifa.motionmix.ui.composable.AuthTitle
 import com.ahmedkhalifa.motionmix.ui.composable.SpacerVertical16
+import com.ahmedkhalifa.motionmix.ui.graphs.AuthScreen
 
 @Composable
 fun LoginScreen(
     navController: NavController
 ) {
+    val context = LocalContext.current
+
+    val authMethods = listOf(
+        AuthMethod(
+            text = stringResource(R.string.use_phone_email_username),
+            iconResId = R.drawable.profile_account_icon,
+            onClick = {
+                navController.navigate(context.getString(R.string.email_phone_tab_login))
+            }
+        ),
+        AuthMethod(
+            text = stringResource(R.string.continue_with_facebook),
+            iconResId = R.drawable.facebook,
+            onClick = {
+                // handle facebook login
+            }
+        ),
+        AuthMethod(
+            text = stringResource(R.string.continue_with_google),
+            iconResId = R.drawable.google,
+            onClick = {
+                // handle google login
+            }
+        ),
+        AuthMethod(
+            text = stringResource(R.string.continue_with_x),
+            iconResId = R.drawable.x,
+            onClick = {
+                // handle X login
+            }
+        ),
+        AuthMethod(
+            text = stringResource(R.string.continue_with_instagram),
+            iconResId = R.drawable.instagram_icon,
+            onClick = {
+                // handle instagram login
+            }
+        )
+    )
+
     LoginScreenContent(
-        onQuestionClick = { },
-        onCloseClick = {},
-        onClickAuth = {}
+        authMethods = authMethods,
+        onQuestionClick = {
+
+        },
+        onCloseClick = {
+
+        },
+        onClickAuth = {
+            navController.navigate(AuthScreen.SignUp.route)
+        }
     )
 
 }
 
 @Composable
 fun LoginScreenContent(
-    onQuestionClick: () -> Unit, onCloseClick: () -> Unit,
-    onClickAuth: () -> Unit
+    authMethods: List<AuthMethod>,
+    onQuestionClick: () -> Unit,
+    onCloseClick: () -> Unit,
+    onClickAuth: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -54,55 +107,37 @@ fun LoginScreenContent(
         SpacerVertical16()
 
         AuthTitle(
-            title = "Login in to MotionMix",
+            title = stringResource(R.string.login_in_to_motionmix),
             subTitle =
-            "Manage your account, check notification, comment on videos, and more."
+                stringResource(R.string.manage_your_account_check_notification_comment_on_videos_and_more)
         )
         SpacerVertical16()
+        authMethods.forEach { authMethod ->
+            AuthButton(
+                text = authMethod.text,
+                onClick = {
+                    authMethod.onClick()
+                },
+                icon = authMethod.iconResId
+            )
+            SpacerVertical16()
+        }
 
-        AuthButton(
-            text = "Use phone / email / username",
-            onClick = {},
-            icon = R.drawable.profile_account_icon
-        )
-        SpacerVertical16()
-        AuthButton(
-            text = "Continue with Facebook",
-            onClick = {},
-            icon = R.drawable.facebook
-        )
-        SpacerVertical16()
-        AuthButton(
-            text = "Continue with Google",
-            onClick = {},
-            icon = R.drawable.google
-        )
-        SpacerVertical16()
-        AuthButton(
-            text = "Continue with Twitter",
-            onClick = {},
-            icon =  R.drawable.twitter_logo_icon
-        )
-        SpacerVertical16()
-        AuthButton(
-            text = "Continue with Instagram",
-            onClick = {},
-            icon = R.drawable.instagram_icon
-        )
+
         Spacer(modifier = Modifier.weight(1f))
         AuthFooterText(
             onClickTermsOfService = {},
             onClickPrivacyPolicy = {},
-            text1 = "By continuing, you agree to our ",
-            text2 = "Terms of Service ",
-            text3 = "and acknowledge that you have read our ",
-            text4 = "Privacy Policy ",
-            text5 = "to learn how we collect, use, and share your data."
+            text1 = stringResource(R.string.by_continuing_you_agree_to_our),
+            text2 = stringResource(R.string.terms_of_service),
+            text3 = stringResource(R.string.and_acknowledge_that_you_have_read_our),
+            text4 = stringResource(R.string.privacy_policy),
+            text5 = stringResource(R.string.to_learn_how_we_collect_use_and_share_your_data)
         )
         SpacerVertical16()
         AuthFooter(
-            text1 = "Don't have an account? ",
-            text2 = "Sign up",
+            text1 = stringResource(R.string.don_t_have_an_account),
+            text2 = stringResource(R.string.sign_up),
             onClickAuth = { onClickAuth() }
         )
     }

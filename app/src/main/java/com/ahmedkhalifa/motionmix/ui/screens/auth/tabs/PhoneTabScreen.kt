@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -33,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.ahmedkhalifa.motionmix.R
 import com.ahmedkhalifa.motionmix.common.utils.EventObserver
 import com.ahmedkhalifa.motionmix.common.utils.isValidPhoneNumber
 import com.ahmedkhalifa.motionmix.ui.composable.AuthFooterText
@@ -72,7 +74,7 @@ fun PhoneTabScreen(
         )
     }
     PhoneTabScreenContent(
-        selectedCountryCode = selectedCountryCode?.value ?: "+20",
+        selectedCountryCode = selectedCountryCode?.value ?: stringResource(R.string._20),
         onClickSendCode = { phoneNumber ->
             registerViewModel.sendVerificationCode(phoneNumber, selectedCountryCode?.value ?: "+20")        },
         onClickCountryCode = { countryCode ->
@@ -101,7 +103,7 @@ fun PhoneTabScreenContent(
         OutlinedTextField(
             value = phoneNumberState,
             onValueChange = { phoneNumberState = it },
-            label = { Text("Phone Number") },
+            label = { Text(stringResource(R.string.phone_number)) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
@@ -124,11 +126,11 @@ fun PhoneTabScreenContent(
         AuthFooterText(
             onClickTermsOfService = {},
             onClickPrivacyPolicy = {},
-            text1 = "By continuing, you agree to our ",
-            text2 = "Terms of Service ",
-            text3 = "and acknowledge that you have read our ",
-            text4 = "Privacy Policy ",
-            text5 = "to learn how we collect, use, and share your data."
+            text1 = stringResource(R.string.by_continuing_you_agree_to_our),
+            text2 = stringResource(R.string.terms_of_service),
+            text3 = stringResource(R.string.and_acknowledge_that_you_have_read_our),
+            text4 = stringResource(R.string.privacy_policy),
+            text5 = stringResource(R.string.to_learn_how_we_collect_use_and_share_your_data)
         )
 
         SpacerVertical16()
@@ -148,7 +150,7 @@ fun PhoneTabScreenContent(
                 CircularProgressIndicator(color = Color.White)
             } else{
                 Text(
-                    text = "Send Code",
+                    text = stringResource(R.string.send_code),
                     modifier = Modifier.padding(8.dp),
                     fontSize = 18.sp,
                     color = Color.White,

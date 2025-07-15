@@ -6,8 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
+import androidx.navigation.compose.rememberNavController
+import com.ahmedkhalifa.motionmix.ui.graphs.RootNavigationGraph
 import com.ahmedkhalifa.motionmix.ui.screens.home.ReelsScreen
 import com.ahmedkhalifa.motionmix.ui.screens.post_reel.PostReelScreen
+import com.ahmedkhalifa.motionmix.ui.screens.splashscreen.SplashScreen
 import com.ahmedkhalifa.motionmix.ui.theme.MotionMixTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -19,7 +22,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MotionMixTheme {
                 PostReelScreen()
-               // RootNavigationGraph(navController = rememberNavController())
+              //  RootNavigationGraph(navController = rememberNavController())
             }
         }
     }

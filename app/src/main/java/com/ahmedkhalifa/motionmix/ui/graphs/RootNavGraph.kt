@@ -13,15 +13,14 @@ fun RootNavigationGraph(navController: NavHostController) {
     NavHost(
         navController = navController,
         route = Graph.ROOT,
-        startDestination = Graph.AUTHENTICATION
+        startDestination = Graph.SPLASH
     ) {
         composable(route=Graph.SPLASH){
             SplashScreen(navController = navController)
         }
+        homeNavGraph(navController=navController)
         authNavGraph(navController = navController)
-        composable(route = Graph.HOME) {
-            HomeScreen()
-        }
+
     }
 }
 
@@ -31,4 +30,12 @@ object Graph {
     const val HOME = "home_graph"
     const val DETAILS = "details_graph"
     const val SPLASH = "splash"
+    object HomeRoutes{
+        const val REEL ="reel"
+        const val POST_REEL ="post_reel"
+        const val FRIENDS ="friends"
+        const val INBOX ="inbox"
+        const val PROFILE ="profile"
+    }
+
 }

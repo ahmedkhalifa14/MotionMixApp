@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
+import com.ahmedkhalifa.motionmix.R
 import com.ahmedkhalifa.motionmix.common.utils.EventObserver
 import com.ahmedkhalifa.motionmix.ui.composable.AuthFooterText
 import com.ahmedkhalifa.motionmix.ui.composable.SpacerVertical16
@@ -135,11 +137,11 @@ fun OtpScreenContent(
         AuthFooterText(
             onClickTermsOfService = { },
             onClickPrivacyPolicy = { },
-            text1 = "By continuing, you agree to our ",
-            text2 = "Terms of Service ",
-            text3 = "and acknowledge that you have read our ",
-            text4 = "Privacy Policy ",
-            text5 = "to learn how we collect, use, and share your data."
+            text1 = stringResource(R.string.by_continuing_you_agree_to_our),
+            text2 = stringResource(R.string.terms_of_service),
+            text3 = stringResource(R.string.and_acknowledge_that_you_have_read_our),
+            text4 = stringResource(R.string.privacy_policy),
+            text5 = stringResource(R.string.to_learn_how_we_collect_use_and_share_your_data)
         )
         SpacerVertical16()
         Button(
@@ -155,7 +157,8 @@ fun OtpScreenContent(
             )
         ) {
             Text(
-                text = "Verify", modifier = Modifier.padding(8.dp),
+                text = stringResource(R.string.verify),
+                modifier = Modifier.padding(8.dp),
                 fontSize = 18.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Medium,

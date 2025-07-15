@@ -15,7 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.ahmedkhalifa.motionmix.R
 import com.ahmedkhalifa.motionmix.ui.graphs.Graph
 import com.ahmedkhalifa.motionmix.ui.theme.AppMainColor
@@ -53,7 +55,7 @@ private fun SplashScreenContent(navController: NavController) {
             )
         )
         delay(3000L)
-        navController.navigate(Graph.HOME)
+        navController.navigate(Graph.AUTHENTICATION)
     }
 
     Box(
@@ -71,9 +73,9 @@ private fun SplashScreenContent(navController: NavController) {
     }
 }
 
-//@Composable
-//@Preview(showSystemUi = true, showBackground = true)
-//fun PreviewSplashScreen() {
-//    SplashScreenContent()
-//}
-//
+@Composable
+@Preview(showSystemUi = true, showBackground = true)
+fun PreviewSplashScreen() {
+    SplashScreen(rememberNavController())
+}
+

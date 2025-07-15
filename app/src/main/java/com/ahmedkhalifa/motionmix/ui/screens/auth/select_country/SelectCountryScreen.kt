@@ -24,6 +24,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -74,7 +75,7 @@ fun SelectCountryScreenContent(navController: NavController) {
             )
             SpacerHorizontal16()
             Text(
-                text = "Select country/region",
+                text = stringResource(R.string.select_country_region),
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
                 color = Color.Black,
@@ -90,7 +91,7 @@ fun SelectCountryScreenContent(navController: NavController) {
             modifier = Modifier.fillMaxWidth(),
             value = searchText.value,
             onValueChange = { searchText.value = it },
-            placeholder = { Text("Search country") },
+            placeholder = { Text(stringResource(R.string.search_country)) },
             trailingIcon = {
                 if (searchText.value.isNotEmpty()) {
                     Icon(

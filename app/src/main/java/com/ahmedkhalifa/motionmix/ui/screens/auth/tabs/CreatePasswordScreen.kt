@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
+import com.ahmedkhalifa.motionmix.R
 import com.ahmedkhalifa.motionmix.common.utils.EventObserver
 import com.ahmedkhalifa.motionmix.common.utils.isPasswordValid
 import com.ahmedkhalifa.motionmix.ui.composable.CreatePasswordHeader
@@ -63,7 +65,8 @@ fun CreatePasswordScreen(
                 },
                 onSuccess = {
                     isLoading = false
-                    Toast.makeText(context, "we will send an email to verify your email Address", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context,
+                        context.getString(R.string.we_will_send_an_email_to_verify_your_email_address), Toast.LENGTH_SHORT).show()
                 }
             )
         )
@@ -113,7 +116,7 @@ fun CreatePasswordScreenContent(
             }
         )
         Text(
-            text = "Create password",
+            text = stringResource(R.string.create_password),
             fontFamily = Montserrat,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
@@ -123,7 +126,7 @@ fun CreatePasswordScreenContent(
         OutlinedTextField(
             value = passwordState,
             onValueChange = { passwordState = it },
-            label = { Text("Enter password") },
+            label = { Text(stringResource(R.string.enter_password)) },
             colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = MaterialTheme.colorScheme.primary,
                 unfocusedIndicatorColor = MaterialTheme.colorScheme.onPrimary,
@@ -141,17 +144,17 @@ fun CreatePasswordScreenContent(
         )
 
         Text(
-            text = "• 8 characters (20 max)",
+            text = stringResource(R.string._8_characters_20_max),
             fontSize = 14.sp,
             modifier = Modifier.padding(bottom = 4.dp)
         )
         Text(
-            text = "• 1 letter, 1 number, 1 special character (# ? ! @)",
+            text = stringResource(R.string._1_letter_1_number_1_special_character),
             fontSize = 14.sp,
             modifier = Modifier.padding(bottom = 4.dp)
         )
         Text(
-            text = "• Strong password",
+            text = stringResource(R.string.strong_password),
             fontSize = 14.sp,
             modifier = Modifier.padding(bottom = 16.dp)
         )
@@ -175,7 +178,8 @@ fun CreatePasswordScreenContent(
             }
             else{
                 Text(
-                    text = "Continue", fontSize = 16.sp,
+                    text = stringResource(R.string._continue),
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                     fontFamily = Montserrat

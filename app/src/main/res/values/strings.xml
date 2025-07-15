@@ -1,6 +1,43 @@
 <resources>
-    <string name="app_name">MotionMix</string>
-    <string name="app_logo">App Logo</string>
-    <string name="server_client_id">179564153901-9dc8m6fv6acfgse5cb5a10carv7qav84.apps.googleusercontent.com</string>
+    <string name="app_name" translatable="false">MotionMix</string>
+    <string name="app_logo" translatable="false">App Logo</string>
+    <string name="server_client_id" translatable="false">179564153901-9dc8m6fv6acfgse5cb5a10carv7qav84.apps.googleusercontent.com</string>
+    <string name="use_phone_email_username">Use phone / email / username</string>
+    <string name="continue_with_facebook">Continue with Facebook</string>
+    <string name="continue_with_google">Continue with Google</string>
+    <string name="continue_with_x">Continue with X</string>
+    <string name="continue_with_instagram">Continue with Instagram</string>
+    <string name="login_in_to_motionmix">Login in to MotionMix</string>
+    <string name="manage_your_account_check_notification_comment_on_videos_and_more">Manage your account, check notification, comment on videos, and more.</string>
+    <string name="by_continuing_you_agree_to_our">"By continuing, you agree to our "</string>
+    <string name="terms_of_service">"Terms of Service "</string>
+    <string name="and_acknowledge_that_you_have_read_our">"and acknowledge that you have read our "</string>
+    <string name="privacy_policy">"Privacy Policy "</string>
+    <string name="to_learn_how_we_collect_use_and_share_your_data">to learn how we collect, use, and share your data.</string>
+    <string name="don_t_have_an_account">"Don't have an account? "</string>
+    <string name="sign_up">Sign up</string>
+    <string name="sign_up_for_motionmix">Sign up for MotionMix</string>
+    <string name="create_a_profile_follow_other_accounts_make_your_own_videos_and_more">Create a profile, follow other accounts, make your own videos, and more.</string>
+    <string name="google_sign_in_loading">Google Sign In loading</string>
+    <string name="google_sign_in_error">Google Sign In Error: %1$s</string>
+    <string name="google_sign_in_success">Google Sign In Success: %1$s</string>
+    <string name="already_have_an_account">"Already have an account? "</string>
+    <string name="log_in">Log in</string>
+    <string name="search_country">Search country</string>
+    <string name="select_country_region">Select country/region</string>
+    <string name="email_phone_tab_login">EMAIL_PHONE_TAB/Login</string>
+    <string name="phone">Phone</string>
+    <string name="email_username">Email / Username</string>
+    <string name="we_will_send_an_email_to_verify_your_email_address">we will send an email to verify your email Address</string>
+    <string name="create_password">Create password</string>
+    <string name="enter_password">Enter password</string>
+    <string name="_8_characters_20_max">• 8 characters (20 max)</string>
+    <string name="_1_letter_1_number_1_special_character">• 1 letter, 1 number, 1 special character (# ? ! @)</string>
+    <string name="strong_password">• Strong password</string>
+    <string name="_continue">Continue</string>
+    <string name="verify">Verify</string>
+    <string name="_20">+20</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="send_code">Send Code</string>
 </resources>
 

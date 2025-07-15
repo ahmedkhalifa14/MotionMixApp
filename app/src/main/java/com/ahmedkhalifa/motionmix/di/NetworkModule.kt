@@ -41,7 +41,8 @@ object NetworkModule {
     fun provideVideosUploadingUsingFirebaseCloudStorage(
         firebaseStorage: FirebaseStorage,
         firebaseAuth: FirebaseAuth,
-    ):VideosUploadingUsingFirebaseCloudStorage=
-        VideosUploadingUsingFirebaseCloudStorage(firebaseStorage,firebaseAuth)
+    ): VideosUploadingUsingFirebaseCloudStorage =
+        VideosUploadingUsingFirebaseCloudStorage(firebaseStorage, firebaseAuth)
+
 
 }

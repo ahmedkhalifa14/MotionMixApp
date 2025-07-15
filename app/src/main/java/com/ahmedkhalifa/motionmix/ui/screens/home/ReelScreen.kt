@@ -23,12 +23,13 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.navigation.NavController
 import kotlinx.coroutines.delay
 
 @UnstableApi
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ReelsScreen() {
+fun ReelsScreen(navController: NavController) {
     val context = LocalContext.current
 
     val videos = remember { getSampleVideos() }

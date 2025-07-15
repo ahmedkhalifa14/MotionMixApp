@@ -14,12 +14,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.ahmedkhalifa.motionmix.R
+import com.ahmedkhalifa.motionmix.common.utils.AuthMethod
 import com.ahmedkhalifa.motionmix.common.utils.EventObserver
 import com.ahmedkhalifa.motionmix.ui.composable.AuthButton
 import com.ahmedkhalifa.motionmix.ui.composable.AuthFooter
@@ -28,14 +30,14 @@ import com.ahmedkhalifa.motionmix.ui.composable.AuthHeader
 import com.ahmedkhalifa.motionmix.ui.composable.AuthTitle
 import com.ahmedkhalifa.motionmix.ui.composable.SpacerVertical16
 import com.ahmedkhalifa.motionmix.ui.graphs.AuthScreen
-
+import com.ahmedkhalifa.motionmix.ui.graphs.Graph
 
 @Composable
 fun SignupScreen(
     navController: NavController,
     registerViewModel: RegisterViewModel = hiltViewModel()
 ) {
-    val googleSignInState = registerViewModel.googleSignInState.collectAsState()
+    registerViewModel.googleSignInState.collectAsState()
     val context = LocalContext.current
     LaunchedEffect(Unit) {
         registerViewModel.googleSignInState.collect(
@@ -43,14 +45,14 @@ fun SignupScreen(
                 onLoading = {
                     Toast.makeText(
                         context,
-                        "Google Sign In loading",
+                        context.getString(R.string.google_sign_in_loading),
                         Toast.LENGTH_SHORT
                     ).show()
                 },
                 onError = { message ->
                     Toast.makeText(
                         context,
-                        "Google Sign In Error: $message",
+                        context.getString(R.string.google_sign_in_error, message),
                         Toast.LENGTH_SHORT
                     ).show()
                     Log.d("GoogleSignIn", "Error: $message")
@@ -58,38 +60,73 @@ fun SignupScreen(
                 onSuccess = { googleAccountUserInfo ->
                     Toast.makeText(
                         context,
-                        "Google Sign In Success: ${googleAccountUserInfo.toString()}",
+                        context.getString(
+                            R.string.google_sign_in_success,
+                            googleAccountUserInfo.toString()
+                        ),
                         Toast.LENGTH_SHORT
                     ).show()
-                    //navController.navigate("home_screen")
+                    navController.navigate(Graph.HOME)
                 }
             )
         )
     }
-
+    val authMethods = listOf(
+        AuthMethod(
+            text = stringResource(R.string.use_phone_email_username),
+            iconResId = R.drawable.profile_account_icon,
+            onClick = {
+                Toast.makeText(context, "clicked", Toast.LENGTH_LONG).show()
+                navController.navigate("EMAIL_PHONE_TAB/Register")
+            }
+        ),
+        AuthMethod(
+            text = stringResource(R.string.continue_with_facebook),
+            iconResId = R.drawable.facebook,
+            onClick = {
+                // handle facebook login
+            }
+        ),
+        AuthMethod(
+            text = stringResource(R.string.continue_with_google),
+            iconResId = R.drawable.google,
+            onClick = {
+                registerViewModel.signInWithGoogle()
+            }
+        ),
+        AuthMethod(
+            text = stringResource(R.string.continue_with_x),
+            iconResId = R.drawable.x,
+            onClick = {
+                // handle X login
+            }
+        ),
+        AuthMethod(
+            text = stringResource(R.string.continue_with_instagram),
+            iconResId = R.drawable.instagram_icon,
+            onClick = {
+                // handle instagram login
+            }
+        )
+    )
     SignupScreenContent(
+        authMethods = authMethods,
         onQuestionClick = { },
         onCloseClick = {},
         onClickAuth = {
-
+            Toast.makeText(context, "clicked", Toast.LENGTH_LONG).show()
+            navController.navigate(AuthScreen.Login.route)
         },
-        onGoogleAuthClick = {
-            registerViewModel.signInWithGoogle()
-        },
-        onClickEmailPhoneAuth = {
-            navController.navigate("EMAIL_PHONE_TAB/Register")
-        }
     )
 
 }
 
 @Composable
 fun SignupScreenContent(
+    authMethods: List<AuthMethod>,
     onQuestionClick: () -> Unit,
     onCloseClick: () -> Unit,
     onClickAuth: () -> Unit,
-    onGoogleAuthClick: () -> Unit,
-    onClickEmailPhoneAuth: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -107,52 +144,35 @@ fun SignupScreenContent(
         SpacerVertical16()
 
         AuthTitle(
-            title = "Sign up for MotionMix",
+            title = stringResource(R.string.sign_up_for_motionmix),
             subTitle =
-                "Create a profile, follow other accounts, make your own videos, and more."
+                stringResource(R.string.create_a_profile_follow_other_accounts_make_your_own_videos_and_more)
         )
         SpacerVertical16()
+        authMethods.forEach { authMethod ->
+            AuthButton(
+                text = authMethod.text,
+                onClick = {
+                    authMethod.onClick()
+                },
+                icon = authMethod.iconResId
+            )
+            SpacerVertical16()
+        }
 
-        AuthButton(
-            text = "Use phone or email",
-            onClick = {
-                onClickEmailPhoneAuth()
-            },
-            icon = R.drawable.profile_account_icon
-        )
-        SpacerVertical16()
-        AuthButton(
-            text = "Continue with Facebook",
-            onClick = {},
-            icon = R.drawable.facebook
-        )
-        SpacerVertical16()
-        AuthButton(
-            text = "Continue with Google",
-            onClick = {
-                onGoogleAuthClick()
-            },
-            icon = R.drawable.google
-        )
-        SpacerVertical16()
-        AuthButton(
-            text = "Continue with Twitter",
-            onClick = {},
-            icon = R.drawable.twitter_logo_icon
-        )
         Spacer(modifier = Modifier.weight(1f))
         AuthFooterText(
-            onClickTermsOfService = { /*TODO*/ },
-            onClickPrivacyPolicy = { /*TODO*/ },
-            text1 = "By continuing, you agree to our ",
-            text2 = "Terms of Service ",
-            text3 = "and acknowledge that you have read our ",
-            text4 = "Privacy Policy ",
-            text5 = "to learn how we collect, use, and share your data."
+            onClickTermsOfService = { },
+            onClickPrivacyPolicy = { },
+            text1 = stringResource(R.string.by_continuing_you_agree_to_our),
+            text2 = stringResource(R.string.terms_of_service),
+            text3 = stringResource(R.string.and_acknowledge_that_you_have_read_our),
+            text4 = stringResource(R.string.privacy_policy),
+            text5 = stringResource(R.string.to_learn_how_we_collect_use_and_share_your_data)
         )
         AuthFooter(
-            text1 = "Already have an account? ",
-            text2 = "Log in",
+            text1 = stringResource(R.string.already_have_an_account),
+            text2 = stringResource(R.string.log_in),
             onClickAuth = { onClickAuth() }
         )
     }

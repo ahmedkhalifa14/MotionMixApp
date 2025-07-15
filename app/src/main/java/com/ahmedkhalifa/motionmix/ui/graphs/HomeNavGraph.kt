@@ -1,21 +1,17 @@
 package com.ahmedkhalifa.motionmix.ui.graphs
 
-import androidx.compose.runtime.Composable
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.ahmedkhalifa.motionmix.ui.screens.ScreenContent
 
-@Composable
-fun HomeNavGraph(navController: NavHostController) {
-    NavHost(
-        navController = navController,
+fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
+    navigation(
         route = Graph.HOME,
         startDestination = BottomBarScreen.Home.route
     ) {
-        composable(route = BottomBarScreen.Home.route) {
+        composable(route = Graph.HomeRoutes.REEL) {
             ScreenContent(
                 name = BottomBarScreen.Home.route,
                 onClick = {
@@ -23,25 +19,25 @@ fun HomeNavGraph(navController: NavHostController) {
                 }
             )
         }
-        composable(route = BottomBarScreen.Profile.route) {
+        composable(route = Graph.HomeRoutes.PROFILE) {
             ScreenContent(
                 name = BottomBarScreen.Profile.route,
                 onClick = { }
             )
         }
-        composable(route = BottomBarScreen.PostReel.route) {
+        composable(route = Graph.HomeRoutes.POST_REEL) {
             ScreenContent(
                 name = BottomBarScreen.PostReel.route,
                 onClick = { }
             )
         }
-        composable(route = BottomBarScreen.Discover.route) {
+        composable(route = Graph.HomeRoutes.FRIENDS) {
             ScreenContent(
                 name = BottomBarScreen.Discover.route,
                 onClick = { }
             )
         }
-        composable(route = BottomBarScreen.Inbox.route) {
+        composable(route = Graph.HomeRoutes.INBOX) {
             ScreenContent(
                 name = BottomBarScreen.Inbox.route,
                 onClick = { }
