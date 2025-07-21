@@ -1,11 +1,11 @@
 package com.ahmedkhalifa.motionmix
 
-import com.ahmedkhalifa.motionmix.common.utils.UploadProgressListener
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import com.ahmedkhalifa.motionmix.common.utils.UploadProgressListener
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -64,7 +64,7 @@ class VideoUploadingNotificationHandler @Inject constructor(
         notificationManager.notify(NOTIFICATION_ID, createNotification(progress).build())
     }
 
-    override fun onSuccess() {
+    override fun onSuccess(mediaUrl: String, thumbnailUrl: String) {
         notificationManager.notify(NOTIFICATION_ID, createNotification(100).build())
     }
 
@@ -72,9 +72,3 @@ class VideoUploadingNotificationHandler @Inject constructor(
         notificationManager.notify(NOTIFICATION_ID, createNotification(-1).build())
     }
 }
-
-
-
-
-
-

@@ -7,27 +7,29 @@ import android.os.Build
 import com.ahmedkhalifa.motionmix.VideoUploadService
 import com.ahmedkhalifa.motionmix.common.utils.UploadEvent
 import com.ahmedkhalifa.motionmix.common.utils.UploadEventHandler
+import com.ahmedkhalifa.motionmix.domain.repo.video_upload.VideoUploadRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharedFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
-
 @Singleton
-class VideoUploadRepository @Inject constructor(
+class VideoUploadRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val uploadEventHandler: UploadEventHandler
-) {
-    val uploadEvents: SharedFlow<UploadEvent> = uploadEventHandler.uploadEvents
+) : VideoUploadRepository {
 
-    fun startUpload(videoUri: Uri) {
-        val serviceIntent = Intent(context, VideoUploadService::class.java).apply {
+    override val uploadEvents: SharedFlow<UploadEvent> = uploadEventHandler.uploadEvents
+
+    override fun startUpload(videoUri: Uri) {
+        val intent = Intent(context, VideoUploadService::class.java).apply {
             putExtra("videoUri", videoUri.toString())
         }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(serviceIntent)
+            context.startForegroundService(intent)
         } else {
-            context.startService(serviceIntent)
+            context.startService(intent)
         }
     }
 }

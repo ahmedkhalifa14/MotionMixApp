@@ -22,14 +22,14 @@ class FireStoreService @Inject constructor(
         description: String
     ): Result<Unit> {
         return try {
-             val userId = firebaseAuth.currentUser?.uid
-               ?: return Result.failure(Exception("User not authenticated"))
+            // val userId = firebaseAuth.currentUser?.uid
+           //    ?: return Result.failure(Exception("User not authenticated"))
             val reel = Reel(
                 id = UUID.randomUUID().toString(),
                 mediaUrl = mediaUrl,
                 thumbnailUrl = thumbnailUrl,
                 description = description,
-                author = userId,
+                author = "userId",
                 likesCount = 0,
                 commentsCount = 0,
                 sharesCount = 0,

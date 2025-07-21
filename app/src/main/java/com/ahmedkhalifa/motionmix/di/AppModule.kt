@@ -2,17 +2,17 @@ package com.ahmedkhalifa.motionmix.di
 
 import android.app.NotificationManager
 import android.content.Context
-import com.ahmedkhalifa.motionmix.VideoUploadService
 import com.ahmedkhalifa.motionmix.VideoUploadingNotificationHandler
-import com.ahmedkhalifa.motionmix.common.utils.UploadEventHandler
+import com.ahmedkhalifa.motionmix.data.remote_data_source.FireStoreService
 import com.ahmedkhalifa.motionmix.data.remote_data_source.FirebaseAuthenticationService
-import com.ahmedkhalifa.motionmix.data.remote_data_source.VideosUploadingUsingFirebaseCloudStorage
 import com.ahmedkhalifa.motionmix.data.repository.AuthRepoImpl
-import com.ahmedkhalifa.motionmix.data.repository.VideoUploadRepository
+import com.ahmedkhalifa.motionmix.data.repository.ReelRepositoryImpl
+import com.ahmedkhalifa.motionmix.data.repository.VideoUploadRepositoryImpl
 import com.ahmedkhalifa.motionmix.domain.repo.auth.AuthRepo
-import com.google.android.gms.auth.api.signin.internal.Storage
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.storage.FirebaseStorage
+import com.ahmedkhalifa.motionmix.domain.repo.video_upload.ReelRepository
+import com.ahmedkhalifa.motionmix.domain.repo.video_upload.VideoUploadRepository
+import com.ahmedkhalifa.motionmix.domain.usecase.SaveReelUseCase
+import com.ahmedkhalifa.motionmix.domain.usecase.UploadVideoUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -35,13 +35,13 @@ object AppModule {
         firebaseAuthenticationService: FirebaseAuthenticationService,
     ): AuthRepo = AuthRepoImpl(firebaseAuthenticationService)
 
-    @Provides
-    @Singleton
-    fun provideVideoUploadRepository(
-        @ApplicationContext context: Context,
-        uploadEventHandler: UploadEventHandler
-    ): VideoUploadRepository =
-        VideoUploadRepository(context, uploadEventHandler)
+//    @Provides
+//    @Singleton
+//    fun provideVideoUploadRepository(
+//        @ApplicationContext context: Context,
+//        uploadEventHandler: UploadEventHandler
+//    ): VideoUploadRepository =
+//        VideoUploadRepository(context, uploadEventHandler)
 
 
 
@@ -61,5 +61,28 @@ object AppModule {
         notificationManager: NotificationManager
     ): VideoUploadingNotificationHandler =
         VideoUploadingNotificationHandler(context, notificationManager)
+
+
+    @Provides
+    fun provideVideoUploadRepository(
+        impl: VideoUploadRepositoryImpl
+    ): VideoUploadRepository = impl
+
+    @Provides
+    fun provideReelRepository(
+        fireStoreService: FireStoreService
+    ): ReelRepository = ReelRepositoryImpl(fireStoreService)
+
+    @Provides
+    fun provideUploadVideoUseCase(
+        repository: VideoUploadRepository
+    ): UploadVideoUseCase = UploadVideoUseCase(repository)
+
+
+    @Provides
+    fun provideSaveReelUseCase(
+        repository: ReelRepository
+    ): SaveReelUseCase = SaveReelUseCase(repository)
+
 
 }

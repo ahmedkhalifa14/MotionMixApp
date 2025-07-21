@@ -20,8 +20,8 @@ class UploadEventHandler @Inject constructor() {
 
     init {
         CoroutineScope(Dispatchers.Default).launch {
-            VideoUploadService.Companion.uploadEvents.collect { event ->
-                _uploadEvents.tryEmit(event)
+            VideoUploadService.uploadEvents.collect { event ->
+                _uploadEvents.emit(event)
             }
         }
     }

@@ -39,5 +39,25 @@
     <string name="_20">+20</string>
     <string name="phone_number">Phone Number</string>
     <string name="send_code">Send Code</string>
+    <string name="permission_required">Permission Required</string>
+    <string name="this_app_requires_notification_permission_to_show_upload_progress_please_grant_it_in_settings">This app requires notification permission to show upload progress. Please grant it in Settings.</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="cancel">Cancel</string>
+    <string name="enter_video_description">Enter video description</string>
+    <string name="choose_video_to_upload">Choose Video to Upload</string>
+    <string name="upload_completed_successfully">Upload completed successfully!</string>
+    <string name="start_new_upload">Start new upload</string>
+    <string name="retry_upload">Retry upload</string>
+    <string name="uploading">Uploading: %1$d%%</string>
+    <string name="upload_progress">Upload progress</string>
+    <string name="select_a_video_to_start_uploading">Select a video to start uploading</string>
+    <string name="upload_started">Upload started</string>
+    <string name="failed_to_select_video">Failed to select video</string>
+    <string name="notification_permission_required_for_upload_progress">Notification permission required for upload progress</string>
+    <string name="reel_saved_successfully">Reel saved Successfully</string>
+    <string name="post_video">Post</string>
+    <string name="post_reel">Post Reel</string>
+    <string name="post">POST</string>
+    <string name="say_something_about_this_video">Say something about this video...</string>
 </resources>
 

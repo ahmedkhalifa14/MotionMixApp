@@ -7,7 +7,6 @@ import androidx.core.net.toUri
 import com.ahmedkhalifa.motionmix.common.utils.UploadEvent
 import com.ahmedkhalifa.motionmix.common.utils.UploadProgressListener
 import com.ahmedkhalifa.motionmix.data.remote_data_source.VideosUploadingUsingFirebaseCloudStorage
-import com.ahmedkhalifa.motionmix.VideoUploadingNotificationHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -49,24 +48,32 @@ class VideoUploadService : Service() {
             videoUri,
             object : UploadProgressListener {
                 override fun onProgress(progress: Int) {
-                    _uploadEvents.tryEmit(UploadEvent(progress, false, false, "Uploading: $progress%"))
+                    _uploadEvents.tryEmit(
+                        UploadEvent(progress, false, false, "Uploading: $progress%")
+                    )
                     videoUploadingNotificationHandler.onProgress(progress)
                 }
 
-                override fun onSuccess() {
-                    _uploadEvents.tryEmit(UploadEvent(100, true, false, "Upload complete"))
-                    videoUploadingNotificationHandler.onSuccess()
+                override fun onSuccess(mediaUrl: String, thumbnailUrl: String) {
+                    _uploadEvents.tryEmit(
+                        UploadEvent(100, true, false, mediaUrl)
+                    )
+                    videoUploadingNotificationHandler.onSuccess(mediaUrl, thumbnailUrl)
                     stopForeground(STOP_FOREGROUND_REMOVE)
                     stopSelf()
                 }
 
                 override fun onFailure() {
-                    _uploadEvents.tryEmit(UploadEvent(-1, false, true, "Upload failed"))
+                    _uploadEvents.tryEmit(
+                        UploadEvent(-1, false, true, "Upload failed")
+                    )
                     videoUploadingNotificationHandler.onFailure()
                     stopForeground(STOP_FOREGROUND_REMOVE)
                     stopSelf()
                 }
-            })
+            }
+        )
+
 
         return START_STICKY
     }

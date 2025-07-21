@@ -1,107 +1,143 @@
 package com.ahmedkhalifa.motionmix.ui.screens.post_reel
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.media.MediaMetadataRetriever
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.*
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.ahmedkhalifa.motionmix.data.model.UploadStatus
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.ahmedkhalifa.motionmix.R
+import com.ahmedkhalifa.motionmix.common.utils.UploadEvent
+import com.ahmedkhalifa.motionmix.ui.theme.AppMainColor
+import com.ahmedkhalifa.motionmix.ui.theme.Montserrat
 import kotlinx.coroutines.launch
 
 @Composable
-fun PostReelScreen(viewModel: UploadViewModel = viewModel()) {
+fun PostReelScreen(viewModel: UploadVideoViewModel = hiltViewModel()) {
     val context = LocalContext.current
-    val uploadStatus by viewModel.uploadStatus.collectAsState(initial = UploadStatus())
+    val uploadEvent by viewModel.uploadEvent.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var showPermissionDialog by remember { mutableStateOf(false) }
     var description by remember { mutableStateOf("") }
+    var selectedVideoUri by remember { mutableStateOf<Uri?>(null) }
+    var thumbnailBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var hasLaunchedPicker by remember { mutableStateOf(false) }
 
     val videoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
-            viewModel.startUpload(it)
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar("Upload started")
-            }
+            selectedVideoUri = it
+            thumbnailBitmap = generateVideoThumbnail(context, it)
         } ?: coroutineScope.launch {
-            snackbarHostState.showSnackbar("Failed to select video")
+            snackbarHostState.showSnackbar(context.getString(R.string.failed_to_select_video))
         }
     }
 
-    // Request notification permission for Android 13+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (!isGranted) {
             showPermissionDialog = true
             coroutineScope.launch {
-                snackbarHostState.showSnackbar("Notification permission required for upload progress")
+                snackbarHostState.showSnackbar(context.getString(R.string.notification_permission_required_for_upload_progress))
             }
         }
     }
 
     LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    context,
-                    android.Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-            }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            )
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 
-    // Save to Firestore when upload is complete
-    LaunchedEffect(uploadStatus) {
-        if (uploadStatus.isComplete && uploadStatus.mediaUrl != null && uploadStatus.thumbnailUrl != null) {
-            val result = saveReelToFirestore(
-                mediaUrl = uploadStatus.mediaUrl!!,
-                thumbnailUrl = uploadStatus.thumbnailUrl!!,
-                description = description
-            )
-            result.onSuccess {
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Reel saved to Firestore")
-                }
-            }.onFailure { e ->
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Failed to save reel: ${e.message}")
+    LaunchedEffect(Unit) {
+        if (!hasLaunchedPicker) {
+            hasLaunchedPicker = true
+            videoPickerLauncher.launch("video/*")
+        }
+    }
+
+    LaunchedEffect(uploadEvent) {
+        if (uploadEvent.isComplete && selectedVideoUri != null) {
+            val mediaUrl = uploadEvent.message
+            val thumbnailUrl = mediaUrl.replace(".mp4", "_thumb.jpg")
+            viewModel.saveReel(mediaUrl, thumbnailUrl, description) { result ->
+                result.onSuccess {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(context.getString(R.string.reel_saved_successfully))
+                    }
+                    selectedVideoUri = null
+                    description = ""
+                    thumbnailBitmap = null
+                    viewModel.resetStatus()
+                }.onFailure {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Failed to save reel: ${it.message}")
+                    }
                 }
             }
         }
     }
 
     PostReelScreenContent(
-        uploadStatus = uploadStatus,
+        selectedVideoUri = selectedVideoUri,
+        thumbnailBitmap = thumbnailBitmap,
+        uploadEvent = uploadEvent,
         showPermissionDialog = showPermissionDialog,
         snackbarHostState = snackbarHostState,
         description = description,
         onDescriptionChange = { description = it },
         onSelectVideo = { videoPickerLauncher.launch("video/*") },
-        onRetryUpload = { videoPickerLauncher.launch("video/*") },
-        onResetUpload = { viewModel.resetUploadStatus() },
+        onPost = {
+            selectedVideoUri?.let { viewModel.uploadVideo(it) }
+        },
         onOpenSettings = {
             showPermissionDialog = false
-            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = android.net.Uri.fromParts("package", context.packageName, null)
-            }
-            context.startActivity(intent)
+            context.startActivity(
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", context.packageName, null)
+                }
+            )
         },
         onDismissPermissionDialog = { showPermissionDialog = false }
     )
@@ -109,143 +145,178 @@ fun PostReelScreen(viewModel: UploadViewModel = viewModel()) {
 
 @Composable
 fun PostReelScreenContent(
-    uploadStatus: UploadStatus,
+    selectedVideoUri: Uri?,
+    thumbnailBitmap: Bitmap?,
+    uploadEvent: UploadEvent,
     showPermissionDialog: Boolean,
     snackbarHostState: SnackbarHostState,
     description: String,
     onDescriptionChange: (String) -> Unit,
     onSelectVideo: () -> Unit,
-    onRetryUpload: () -> Unit,
-    onResetUpload: () -> Unit,
+    onPost: () -> Unit,
     onOpenSettings: () -> Unit,
     onDismissPermissionDialog: () -> Unit
 ) {
-    // Permission denial dialog
     if (showPermissionDialog) {
         AlertDialog(
             onDismissRequest = onDismissPermissionDialog,
-            title = { Text("Permission Required") },
-            text = { Text("This app requires notification permission to show upload progress. Please grant it in Settings.") },
+            title = { Text("Permission required") },
+            text = { Text("This app requires notification permission. Please grant it in settings.") },
             confirmButton = {
-                Button(
-                    onClick = onOpenSettings,
-                    modifier = Modifier.semantics { contentDescription = "Open Settings" }
-                ) {
+                Button(onClick = onOpenSettings) {
                     Text("Open Settings")
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = onDismissPermissionDialog,
-                    modifier = Modifier.semantics { contentDescription = "Cancel" }
-                ) {
+                TextButton(onClick = onDismissPermissionDialog) {
                     Text("Cancel")
                 }
             }
         )
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        content = { padding ->
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        contentAlignment = Alignment.Center
+    ) {
+        if (selectedVideoUri == null) {
+            Button(
+                onClick = onSelectVideo,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AppMainColor
+                )
+            ) {
+                Text(
+                    text = "Select Video",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        } else {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .background(MaterialTheme.colorScheme.background)
             ) {
-                // Description input field
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        stringResource(R.string.post_reel),
+                        fontFamily = Montserrat,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    val isUploading =
+                        uploadEvent.progress > 0 && !uploadEvent.isComplete && !uploadEvent.isFailed
+
+                    Button(
+                        onClick = onPost,
+                        shape = RoundedCornerShape(10),
+                        enabled = !isUploading,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AppMainColor,
+                            contentColor = MaterialTheme.colorScheme.onBackground,
+                            disabledContainerColor = AppMainColor.copy(alpha = 0.5f), // لون مختلف عند التعطيل
+                            disabledContentColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                        )
+                    ) {
+                        Text(
+                            text = stringResource(R.string.post),
+                            fontFamily = Montserrat,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                }
+
+                // Description TextField
                 TextField(
                     value = description,
                     onValueChange = onDescriptionChange,
-                    label = { Text("Description") },
                     modifier = Modifier
-                        .fillMaxWidth(0.8f)
-                        .semantics { contentDescription = "Enter video description" },
-                    maxLines = 3
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    placeholder = {
+                        Text(stringResource(R.string.say_something_about_this_video))
+                    },
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedTextColor = Color.White,
+                        focusedTextColor = Color.White,
+                        unfocusedPlaceholderColor = Color.Gray,
+                        focusedPlaceholderColor = Color.LightGray
+                    )
                 )
 
-                // Upload button
-                Button(
-                    onClick = onSelectVideo,
-                    modifier = Modifier
-                        .fillMaxWidth(0.8f)
-                        .semantics { contentDescription = "Choose video to upload" }
-                ) {
-                    Text("Choose Video to Upload")
+                // Thumbnail
+                thumbnailBitmap?.let {
+                    Image(
+                        bitmap = it.asImageBitmap(),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(360.dp)
+                            .padding(horizontal = 8.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                    )
                 }
 
-                // Progress or status display
+                // Upload progress
+                if (uploadEvent.progress > 0 && !uploadEvent.isComplete && !uploadEvent.isFailed) {
+                    LinearProgressIndicator(
+                        progress = { uploadEvent.progress / 100f },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        color = AppMainColor,
+                    )
+                }
+
+                // Upload status
                 when {
-                    uploadStatus.isComplete -> {
+                    uploadEvent.isComplete -> {
                         Text(
-                            text = "Upload completed successfully!",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary
+                            "Upload completed successfully.",
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(8.dp)
                         )
-                        Button(
-                            onClick = onResetUpload,
-                            modifier = Modifier.semantics { contentDescription = "Start new upload" }
-                        ) {
-                            Text("Start New Upload")
-                        }
                     }
-                    uploadStatus.isFailed -> {
+
+                    uploadEvent.isFailed -> {
                         Text(
-                            text = "Upload failed: ${uploadStatus.message}",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Button(
-                            onClick = onRetryUpload,
-                            modifier = Modifier.semantics { contentDescription = "Retry upload" }
-                        ) {
-                            Text("Retry Upload")
-                        }
-                    }
-                    uploadStatus.progress > 0 -> {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = uploadStatus.message,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            LinearProgressIndicator(
-                                progress = { uploadStatus.progress / 100f },
-                                modifier = Modifier
-                                    .fillMaxWidth(0.8f)
-                                    .padding(top = 8.dp)
-                                    .semantics { contentDescription = "Upload progress" }
-                            )
-                        }
-                    }
-                    else -> {
-                        Text(
-                            text = "Select a video to start uploading",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            "Upload failed: ${uploadEvent.message}",
+                            color = Color.Red,
+                            modifier = Modifier.padding(8.dp)
                         )
                     }
                 }
             }
         }
-    )
+    }
 }
 
-@Composable
-@Preview(showSystemUi = true, showBackground = true)
-fun PreviewPostReelScreenContent() {
-    PostReelScreenContent(
-        uploadStatus = UploadStatus(),
-        showPermissionDialog = false,
-        snackbarHostState = SnackbarHostState(),
-        description = "",
-        onDescriptionChange = {},
-        onSelectVideo = {},
-        onRetryUpload = {},
-        onResetUpload = {},
-        onOpenSettings = {},
-        onDismissPermissionDialog = {}
-    )
+
+fun generateVideoThumbnail(context: Context, uri: Uri): Bitmap? {
+    return try {
+        val retriever = MediaMetadataRetriever()
+        retriever.setDataSource(context, uri)
+        val bitmap = retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+        retriever.release()
+        bitmap
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
 }

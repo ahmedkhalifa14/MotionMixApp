@@ -108,10 +108,5 @@ dependencies {
 
     implementation ("androidx.compose.runtime:runtime:1.7.0")
     implementation ("androidx.media3:media3-exoplayer-dash:1.4.0")
-//camera
-    implementation ("androidx.camera:camera-core:1.3.0")
-    implementation ("androidx.camera:camera-camera2:1.3.0")
-    implementation ("androidx.camera:camera-lifecycle:1.3.0")
-    implementation ("androidx.camera:camera-view:1.3.0")
 
 }

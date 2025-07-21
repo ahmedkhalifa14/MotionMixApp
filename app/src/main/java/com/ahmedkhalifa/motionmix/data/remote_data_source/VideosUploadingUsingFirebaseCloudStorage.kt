@@ -8,27 +8,33 @@ import javax.inject.Inject
 
 class VideosUploadingUsingFirebaseCloudStorage @Inject constructor(
     private val firebaseStorage: FirebaseStorage,
-    private val firebaseAuth: FirebaseAuth,
-
+    private val firebaseAuth: FirebaseAuth
 ) {
-
     fun uploadVideo(videoUri: Uri, listener: UploadProgressListener) {
-        val userUid = firebaseAuth.currentUser?.uid ?: return
+//        val userUid = firebaseAuth.currentUser?.uid ?: run {
+//            listener.onFailure()
+//            return
+//        }
+
+        val fileName = "${System.currentTimeMillis()}.mp4"
         val storageRef = firebaseStorage.reference
-            .child("reels/$userUid/${System.currentTimeMillis()}.mp4")
+            .child("reels/$55/$fileName")
+
         val uploadTask = storageRef.putFile(videoUri)
+
         uploadTask.addOnProgressListener { taskSnapshot ->
-            val progress =
-                (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
+            val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
             listener.onProgress(progress)
         }.addOnSuccessListener {
-            listener.onSuccess()
+            storageRef.downloadUrl.addOnSuccessListener { uri ->
+                val mediaUrl = uri.toString()
+                val thumbnailUrl = mediaUrl.replace(".mp4", "_thumb.jpg")
+                listener.onSuccess(mediaUrl, thumbnailUrl)
+            }.addOnFailureListener {
+                listener.onFailure()
+            }
         }.addOnFailureListener {
             listener.onFailure()
         }
     }
-
 }
-
-
-
