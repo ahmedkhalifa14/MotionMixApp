@@ -5,19 +5,15 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.ahmedkhalifa.motionmix.ui.screens.ScreenContent
+import com.ahmedkhalifa.motionmix.ui.screens.home.HomeScreen
 
 fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
     navigation(
         route = Graph.HOME,
-        startDestination = BottomBarScreen.Home.route
+        startDestination = Graph.HomeRoutes.REEL
     ) {
         composable(route = Graph.HomeRoutes.REEL) {
-            ScreenContent(
-                name = BottomBarScreen.Home.route,
-                onClick = {
-                    navController.navigate(Graph.DETAILS)
-                }
-            )
+            HomeScreen(navController)
         }
         composable(route = Graph.HomeRoutes.PROFILE) {
             ScreenContent(

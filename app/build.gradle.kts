@@ -75,6 +75,7 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.google.signin)
     implementation(libs.googleid)
+    implementation(libs.play.services.location)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
@@ -82,6 +83,8 @@ dependencies {
     androidTestImplementation(libs.ui.test.junit4)
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
+
+    implementation(libs.ucrop)
 
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.8.3")
@@ -104,9 +107,15 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
-    implementation( "androidx.compose.material:material-icons-extended:1.7.0")
+    implementation("androidx.compose.material:material-icons-extended:1.7.0")
 
-    implementation ("androidx.compose.runtime:runtime:1.7.0")
-    implementation ("androidx.media3:media3-exoplayer-dash:1.4.0")
+    implementation("androidx.compose.runtime:runtime:1.7.0")
+    implementation("androidx.media3:media3-exoplayer-dash:1.4.0")
+    //datastore
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+
+
 
 }

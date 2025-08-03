@@ -35,6 +35,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.ahmedkhalifa.motionmix.R
 import com.ahmedkhalifa.motionmix.ui.composable.EmailPhoneTabHeader
+import com.ahmedkhalifa.motionmix.ui.theme.AppMainColor
 import com.ahmedkhalifa.motionmix.ui.theme.Montserrat
 import com.ahmedkhalifa.motionmix.ui.theme.MotionMixTheme
 
@@ -48,10 +49,11 @@ fun EmailPhoneTab(
     val tabIcons = listOf(Icons.Default.Phone, Icons.Default.Email)
     val authTypes = listOf("phone", "email")
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .background(color = MaterialTheme.colorScheme.background)
-        .padding(horizontal = 16.dp, vertical = 16.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color = MaterialTheme.colorScheme.background)
+            .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         EmailPhoneTabHeader(
             title = initialMode,
@@ -77,7 +79,7 @@ fun EmailPhoneTab(
                 color = MaterialTheme.colorScheme.background
             ) {
                 when (authTypes[tabIndex]) {
-                    "email" -> EmailTabScreen(navController)
+                    "email" -> EmailTabScreen(navController, initialMode)
                     "phone" -> PhoneTabScreen(navController)
                 }
             }
@@ -100,19 +102,26 @@ private fun AuthTopBar(
             TabRowDefaults.SecondaryIndicator(
                 Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
                 height = 4.dp,
-                color = MaterialTheme.colorScheme.onPrimary
+                color = AppMainColor
             )
         }
     ) {
         tabs.forEachIndexed { index, title ->
             Tab(
-                text = { Text(title,
-                    fontFamily = Montserrat,
-                    fontWeight = FontWeight.Bold,) },
+                text = {
+                    Text(
+                        title,
+                        fontFamily = Montserrat,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                },
                 icon = {
                     Icon(
                         imageVector = icons[index],
-                        contentDescription = "$title Tab Icon"
+                        contentDescription = "$title Tab Icon",
+                        tint = MaterialTheme.colorScheme.onBackground
+
                     )
                 },
                 selected = selectedTab == index,

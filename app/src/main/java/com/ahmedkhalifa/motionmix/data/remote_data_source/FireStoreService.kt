@@ -22,14 +22,14 @@ class FireStoreService @Inject constructor(
         description: String
     ): Result<Unit> {
         return try {
-            // val userId = firebaseAuth.currentUser?.uid
-           //    ?: return Result.failure(Exception("User not authenticated"))
+            val userId = firebaseAuth.currentUser?.uid
+                ?: return Result.failure(Exception("User not authenticated"))
             val reel = Reel(
                 id = UUID.randomUUID().toString(),
                 mediaUrl = mediaUrl,
                 thumbnailUrl = thumbnailUrl,
                 description = description,
-                author = "userId",
+                author = userId,
                 likesCount = 0,
                 commentsCount = 0,
                 sharesCount = 0,
@@ -48,6 +48,7 @@ class FireStoreService @Inject constructor(
         }
     }
 
+    // USER ACCOUNT DATA
 
     suspend fun saveUserInfo(user: User) {
         // Check if the user is logged in
@@ -60,6 +61,53 @@ class FireStoreService @Inject constructor(
             Log.d(
                 "FirebaseService", "saveUserInfo: ${e.message}"
             )
+        }
+    }
+
+    suspend fun getUserInfo(): User? {
+        val currentUser = firebaseAuth.currentUser
+            ?: return null
+        val documentReference = firebaseFireStore.collection("Users")
+            .document(currentUser.uid)
+        return try {
+            val documentSnapshot = documentReference.get().await()
+            if (documentSnapshot.exists()) {
+                documentSnapshot.toObject(User::class.java)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+
+    suspend fun updateUserInfo(user: User) {
+        val currentUser = firebaseAuth.currentUser ?: return
+        val documentReference = firebaseFireStore.collection("Users")
+            .document(currentUser.uid)
+        Log.d("FirebaseService", "updateUserInfo: ${currentUser.uid}")
+        try {
+            documentReference.set(
+                mapOf(
+                    "firstName" to user.firstName,
+                    "lastName" to user.lastName,
+                    "username" to user.username,
+                    "phoneNumber" to user.phoneNumber,
+                    "email" to user.email,
+                    "joinedAt" to user.joinedAt,
+                    "location" to user.location,
+                    "latitude" to user.latitude,
+                    "longitude" to user.longitude,
+                    "profilePictureLink" to user.profilePictureLink,
+                    "numberOfFollowers" to user.numberOfFollowers,
+                    "numberOfFollowing" to user.numberOfFollowing,
+                    "likes" to user.likes
+                ),
+                SetOptions.merge()
+            ).await()
+        } catch (e: Exception) {
+            Log.d("FirebaseService", "updateUserInfo: ${e.message}")
         }
     }
 

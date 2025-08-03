@@ -1,6 +1,7 @@
 package com.ahmedkhalifa.motionmix.ui.screens.auth.tabs
 
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -76,11 +77,11 @@ fun PhoneTabScreen(
     PhoneTabScreenContent(
         selectedCountryCode = selectedCountryCode?.value ?: stringResource(R.string._20),
         onClickSendCode = { phoneNumber ->
-            registerViewModel.sendVerificationCode(phoneNumber, selectedCountryCode?.value ?: "+20")        },
+            registerViewModel.sendVerificationCode(phoneNumber, selectedCountryCode?.value ?: "+20")
+        },
         onClickCountryCode = { countryCode ->
             navController.navigate(AuthScreen.SelectCountryCode.route)
-        }
-        ,
+        },
         isLoading = isLoading
     )
 }
@@ -98,6 +99,7 @@ fun PhoneTabScreenContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(top = 32.dp, bottom = 16.dp, start = 16.dp, end = 16.dp)
     ) {
         OutlinedTextField(
@@ -146,9 +148,9 @@ fun PhoneTabScreenContent(
             enabled = isValidPhoneNumber(selectedCountryCode + phoneNumberState),
             colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary)
         ) {
-            if (isLoading){
+            if (isLoading) {
                 CircularProgressIndicator(color = Color.White)
-            } else{
+            } else {
                 Text(
                     text = stringResource(R.string.send_code),
                     modifier = Modifier.padding(8.dp),

@@ -1,6 +1,7 @@
 package com.ahmedkhalifa.motionmix.ui.screens.auth.signup
 
 import android.content.Context
+import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
@@ -23,6 +24,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import android.accounts.AccountManager
+import androidx.credentials.*
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.libraries.identity.googleid.*
 
 
 @HiltViewModel
@@ -104,7 +110,6 @@ class RegisterViewModel @Inject constructor(
     private val _googleSignInState = MutableStateFlow<Event<Resource<GoogleSignInState>>>(Event(Resource.Init()))
     val googleSignInState: StateFlow<Event<Resource<GoogleSignInState>>> = _googleSignInState.asStateFlow()
 
-
     fun signInWithGoogle() {
         viewModelScope.launch(Dispatchers.Main) {
             _googleSignInState.value = Event(Resource.Loading())
@@ -113,7 +118,7 @@ class RegisterViewModel @Inject constructor(
                 val googleIdOption = GetGoogleIdOption.Builder()
                     .setServerClientId(context.getString(R.string.server_client_id))
                     .setFilterByAuthorizedAccounts(false)
-                    .setAutoSelectEnabled(true)
+                    .setAutoSelectEnabled(false)
                     .build()
                 val request = GetCredentialRequest.Builder()
                     .addCredentialOption(googleIdOption)

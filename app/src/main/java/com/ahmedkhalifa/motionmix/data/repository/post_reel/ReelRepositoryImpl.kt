@@ -1,4 +1,4 @@
-package com.ahmedkhalifa.motionmix.data.repository
+package com.ahmedkhalifa.motionmix.data.repository.post_reel
 
 import com.ahmedkhalifa.motionmix.data.remote_data_source.FireStoreService
 import com.ahmedkhalifa.motionmix.domain.repo.video_upload.ReelRepository

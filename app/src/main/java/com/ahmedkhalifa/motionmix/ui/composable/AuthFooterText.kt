@@ -52,7 +52,7 @@ fun AuthFooterText(
 
         },
 
-        color = Color.Gray,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         fontWeight = FontWeight.Normal,
         fontFamily = Montserrat,
         fontSize = 12.sp,

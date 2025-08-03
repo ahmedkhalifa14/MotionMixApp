@@ -3,12 +3,17 @@ package com.ahmedkhalifa.motionmix.di
 import android.app.NotificationManager
 import android.content.Context
 import com.ahmedkhalifa.motionmix.VideoUploadingNotificationHandler
+import com.ahmedkhalifa.motionmix.data.local_data_source.datastore.DataStoreManager
 import com.ahmedkhalifa.motionmix.data.remote_data_source.FireStoreService
 import com.ahmedkhalifa.motionmix.data.remote_data_source.FirebaseAuthenticationService
-import com.ahmedkhalifa.motionmix.data.repository.AuthRepoImpl
-import com.ahmedkhalifa.motionmix.data.repository.ReelRepositoryImpl
-import com.ahmedkhalifa.motionmix.data.repository.VideoUploadRepositoryImpl
+import com.ahmedkhalifa.motionmix.data.repository.app_pref.AppPreferencesRepoImpl
+import com.ahmedkhalifa.motionmix.data.repository.auth.AuthRepoImpl
+import com.ahmedkhalifa.motionmix.data.repository.post_reel.ReelRepositoryImpl
+import com.ahmedkhalifa.motionmix.data.repository.post_reel.VideoUploadRepositoryImpl
+import com.ahmedkhalifa.motionmix.data.repository.user_profile.UserProfileRepoImpl
+import com.ahmedkhalifa.motionmix.domain.repo.app_preferences.AppPreferencesRepo
 import com.ahmedkhalifa.motionmix.domain.repo.auth.AuthRepo
+import com.ahmedkhalifa.motionmix.domain.repo.user_profile.UserProfileRepo
 import com.ahmedkhalifa.motionmix.domain.repo.video_upload.ReelRepository
 import com.ahmedkhalifa.motionmix.domain.repo.video_upload.VideoUploadRepository
 import com.ahmedkhalifa.motionmix.domain.usecase.SaveReelUseCase
@@ -29,22 +34,18 @@ object AppModule {
         @ApplicationContext applicationContext: ApplicationContext
     ) = applicationContext
 
+
+    @Provides
+    @Singleton
+    fun provideDataStoreManager(@ApplicationContext context: Context): DataStoreManager {
+        return DataStoreManager(context)
+    }
+
     @Provides
     @Singleton
     fun provideAuthRepository(
         firebaseAuthenticationService: FirebaseAuthenticationService,
     ): AuthRepo = AuthRepoImpl(firebaseAuthenticationService)
-
-//    @Provides
-//    @Singleton
-//    fun provideVideoUploadRepository(
-//        @ApplicationContext context: Context,
-//        uploadEventHandler: UploadEventHandler
-//    ): VideoUploadRepository =
-//        VideoUploadRepository(context, uploadEventHandler)
-
-
-
 
     @Provides
     @Singleton
@@ -72,6 +73,18 @@ object AppModule {
     fun provideReelRepository(
         fireStoreService: FireStoreService
     ): ReelRepository = ReelRepositoryImpl(fireStoreService)
+
+
+    @Provides
+    fun provideAppPreferencesRepo(
+        dataStoreManager: DataStoreManager
+    ): AppPreferencesRepo = AppPreferencesRepoImpl(dataStoreManager)
+
+
+    @Provides
+    fun provideUserProfileRepo(
+        fireStoreService: FireStoreService
+    ): UserProfileRepo = UserProfileRepoImpl(fireStoreService)
 
     @Provides
     fun provideUploadVideoUseCase(

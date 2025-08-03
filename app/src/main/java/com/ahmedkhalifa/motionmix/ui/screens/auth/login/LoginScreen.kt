@@ -1,11 +1,15 @@
 package com.ahmedkhalifa.motionmix.ui.screens.auth.login
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -13,10 +17,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.ahmedkhalifa.motionmix.R
+import com.ahmedkhalifa.motionmix.common.helpers.splitFullName
 import com.ahmedkhalifa.motionmix.common.utils.AuthMethod
+import com.ahmedkhalifa.motionmix.common.utils.EventObserver
+import com.ahmedkhalifa.motionmix.common.utils.GoogleSignInState
+import com.ahmedkhalifa.motionmix.data.model.User
 import com.ahmedkhalifa.motionmix.ui.composable.AuthButton
 import com.ahmedkhalifa.motionmix.ui.composable.AuthFooter
 import com.ahmedkhalifa.motionmix.ui.composable.AuthFooterText
@@ -24,12 +33,72 @@ import com.ahmedkhalifa.motionmix.ui.composable.AuthHeader
 import com.ahmedkhalifa.motionmix.ui.composable.AuthTitle
 import com.ahmedkhalifa.motionmix.ui.composable.SpacerVertical16
 import com.ahmedkhalifa.motionmix.ui.graphs.AuthScreen
+import com.ahmedkhalifa.motionmix.ui.graphs.BottomBarScreen
+import com.ahmedkhalifa.motionmix.ui.graphs.Graph
+import com.ahmedkhalifa.motionmix.ui.screens.AppPreferencesViewModel
+import com.ahmedkhalifa.motionmix.ui.screens.auth.signup.RegisterViewModel
+import com.ahmedkhalifa.motionmix.ui.screens.profile.UserProfileViewModel
 
 @Composable
 fun LoginScreen(
-    navController: NavController
+    navController: NavController,
+    registerViewModel: RegisterViewModel = hiltViewModel(),
+    appPreferencesViewModel: AppPreferencesViewModel = hiltViewModel(),
+    userProfileViewModel: UserProfileViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        registerViewModel.googleSignInState.collect(
+            EventObserver(
+                onLoading = {
+
+                },
+                onError = { message ->
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.google_sign_in_error, message),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    Log.d("GoogleSignIn", "Error: $message")
+                },
+                onSuccess = { state ->
+                    when (state) {
+                        is GoogleSignInState.Success -> {
+                            val googleAccountUserInfo = state.user
+                            Toast.makeText(
+                                context,
+                                context.getString(
+                                    R.string.google_sign_in_success,
+                                    googleAccountUserInfo.toString()
+                                ),
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            appPreferencesViewModel.setUserLogin(true)
+
+                            val (firstName, lastName) = splitFullName(
+                                googleAccountUserInfo.displayName ?: ""
+                            )
+                            userProfileViewModel.saveUserProfileData(
+                                User(
+                                    firstName = firstName,
+                                    lastName = lastName,
+                                    profilePictureLink = googleAccountUserInfo.photoUrl ?: "",
+                                    email = googleAccountUserInfo.email ?: ""
+                                )
+                            )
+
+                            navController.navigate(BottomBarScreen.Home.route)
+                        }
+
+                        else -> {
+                            // Handle unexpected state if needed
+                        }
+                    }
+                }
+            )
+        )
+    }
 
     val authMethods = listOf(
         AuthMethod(
@@ -37,7 +106,8 @@ fun LoginScreen(
             iconResId = R.drawable.profile_account_icon,
             onClick = {
                 navController.navigate(context.getString(R.string.email_phone_tab_login))
-            }
+            },
+            tint = MaterialTheme.colorScheme.onBackground
         ),
         AuthMethod(
             text = stringResource(R.string.continue_with_facebook),
@@ -50,15 +120,17 @@ fun LoginScreen(
             text = stringResource(R.string.continue_with_google),
             iconResId = R.drawable.google,
             onClick = {
-                // handle google login
-            }
-        ),
+                registerViewModel.signInWithGoogle()
+            },
+
+            ),
         AuthMethod(
             text = stringResource(R.string.continue_with_x),
             iconResId = R.drawable.x,
             onClick = {
                 // handle X login
-            }
+            },
+            tint = MaterialTheme.colorScheme.onBackground
         ),
         AuthMethod(
             text = stringResource(R.string.continue_with_instagram),
@@ -94,7 +166,7 @@ fun LoginScreenContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 16.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
 
@@ -118,7 +190,8 @@ fun LoginScreenContent(
                 onClick = {
                     authMethod.onClick()
                 },
-                icon = authMethod.iconResId
+                icon = authMethod.iconResId,
+                tint = authMethod.tint
             )
             SpacerVertical16()
         }

@@ -6,7 +6,7 @@ import com.google.firebase.auth.AuthResult
 
 interface AuthRepo {
     suspend fun registerWithEmailAndPassword(email: String, password: String):Resource<Unit>
-    suspend fun loginWithEmailAndPassword(email: String, password: String): Resource<LoginResult>
+    suspend fun loginWithEmailAndPassword(email: String, password: String): LoginResult
     suspend fun sendVerificationCode(phoneNumber: String): Resource<String>
     suspend fun verifyCode(verificationId: String, code: String):Resource<Unit>
     suspend fun signInWithGoogle(idToken: String): Resource<AuthResult>

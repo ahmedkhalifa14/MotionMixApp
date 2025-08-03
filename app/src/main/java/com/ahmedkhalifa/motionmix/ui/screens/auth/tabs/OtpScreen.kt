@@ -40,6 +40,8 @@ import com.ahmedkhalifa.motionmix.R
 import com.ahmedkhalifa.motionmix.common.utils.EventObserver
 import com.ahmedkhalifa.motionmix.ui.composable.AuthFooterText
 import com.ahmedkhalifa.motionmix.ui.composable.SpacerVertical16
+import com.ahmedkhalifa.motionmix.ui.graphs.Graph
+import com.ahmedkhalifa.motionmix.ui.screens.AppPreferencesViewModel
 import com.ahmedkhalifa.motionmix.ui.screens.auth.signup.RegisterViewModel
 import com.ahmedkhalifa.motionmix.ui.theme.Montserrat
 
@@ -47,7 +49,9 @@ import com.ahmedkhalifa.motionmix.ui.theme.Montserrat
 fun OtpScreen(
     navController: NavController,
     backStackEntry: NavBackStackEntry,
-    registerViewModel: RegisterViewModel = hiltViewModel()
+    registerViewModel: RegisterViewModel = hiltViewModel(),
+    appPreferencesViewModel: AppPreferencesViewModel = hiltViewModel()
+
 ) {
     val verificationId = backStackEntry.arguments?.getString("verificationId")
     val context = LocalContext.current
@@ -64,6 +68,8 @@ fun OtpScreen(
                 },
                 onSuccess = {
                     isLoading = false
+                    appPreferencesViewModel.setUserLogin(true)
+                    navController.navigate(Graph.HOME)
                     Toast.makeText(context, "Success", Toast.LENGTH_SHORT).show()
                 }
             )
@@ -84,6 +90,7 @@ fun OtpScreenContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(
                 top = 32.dp,
                 bottom = 16.dp,
@@ -100,7 +107,7 @@ fun OtpScreenContent(
                 }
             },
             decorationBox = {
-                Box() {
+                Box {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {

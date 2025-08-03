@@ -1,6 +1,5 @@
 package com.ahmedkhalifa.motionmix.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -11,49 +10,47 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 private val DarkColorScheme = darkColorScheme(
-    primary = AppMainColor,           // Main brand color for buttons, tabs, and highlights
-    onPrimary = Color.Black,      // Text and icons on primary color (e.g., button text)
-    secondary = PurpleGrey80,     // Accent color for secondary actions (e.g., progress bars)
-    onSecondary = Color.Black,    // Text and icons on secondary color (e.g., secondary button text)
-    tertiary = Pink80,            // Additional accent for charts or decorative elements
-    onTertiary = Color.Black,     // Text and icons on tertiary color (e.g., chart labels)
-    background = Color(0xFF121212), // App's overall background color (root canvas)
-    onBackground = Color.White,   // Text and icons on background (e.g., app title)
-    surface = Color(0xFF121212),  // Background for cards, dialogs, and elevated surfaces
-    onSurface = Color.White,      // Text and icons on surface (e.g., body text in cards)
-    surfaceVariant = Color(0xFF2C2C2C), // Subtle background for dividers or secondary surfaces
-    onSurfaceVariant = Color(0xFFB0B0B0), // Secondary text on surfaceVariant (e.g., hints, labels)
-    error = Color(0xFFCF6679),    // Color for error states (e.g., error messages)
-    onError = Color.Black         // Text and icons on error color (e.g., error message text)
+    primary = AppMainColor,
+    onPrimary = Color.Black,
+    secondary = PurpleGrey80,
+    onSecondary = Color.Black,
+    tertiary = Pink80,
+    onTertiary = Color.Black,
+    background = Color(0xFF121212),
+    onBackground = Color.White,
+    surface = Color(0xFF121212),
+    onSurface = Color.White,
+    surfaceVariant = Color(0xFF2C2C2C),
+    onSurfaceVariant = Color(0xFFB0B0B0),
+    error = Color(0xFFCF6679),
+    onError = Color.Black
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = AppMainColor,           // Main brand color for buttons, tabs, and highlights
-    onPrimary = Color.White,      // Text and icons on primary color (e.g., button text)
-    secondary = PurpleGrey40,     // Accent color for secondary actions (e.g., progress bars)
-    onSecondary = Color.White,    // Text and icons on secondary color (e.g., secondary button text)
-    tertiary = Pink40,            // Additional accent for charts or decorative elements
-    onTertiary = Color.White,     // Text and icons on tertiary color (e.g., chart labels)
-    background = Color(0xFFFFFBFE), // App's overall background color (root canvas)
-    onBackground = Color(0xFF1C1B1F), // Text and icons on background (e.g., app title)
-    surface = Color(0xFFFFFBFE),  // Background for cards, dialogs, and elevated surfaces
-    onSurface = Color(0xFF1C1B1F), // Text and icons on surface (e.g., body text in cards)
-    surfaceVariant = Color(0xFFE0E0E0), // Subtle background for dividers or secondary surfaces
-    onSurfaceVariant = Color(0xFF444444), // Secondary text on surfaceVariant (e.g., hints, labels)
-    error = Color(0xFFB00020),    // Color for error states (e.g., error messages)
-    onError = Color.White         // Text and icons on error color (e.g., error message text)
+    primary = AppMainColor,
+    onPrimary = Color.White,
+    secondary = PurpleGrey40,
+    onSecondary = Color.White,
+    tertiary = Pink40,
+    onTertiary = Color.White,
+    background = Color(0xFFFFFBFE),
+    onBackground = Color(0xFF1C1B1F),
+    surface = Color(0xFFFFFBFE),
+    onSurface = Color(0xFF1C1B1F),
+    surfaceVariant = Color(0xFFE0E0E0),
+    onSurfaceVariant = Color(0xFF444444),
+    error = Color(0xFFB00020),
+    onError = Color.White
 )
 
 @Composable
 fun MotionMixTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
@@ -62,17 +59,18 @@ fun MotionMixTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
-        }
+
+    val systemUiController = rememberSystemUiController()
+    val useDarkIcons = !darkTheme
+
+    SideEffect {
+        systemUiController.setStatusBarColor(
+            color = colorScheme.background,
+            darkIcons = useDarkIcons
+        )
     }
 
     MaterialTheme(

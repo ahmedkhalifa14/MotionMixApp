@@ -65,8 +65,11 @@ fun CreatePasswordScreen(
                 },
                 onSuccess = {
                     isLoading = false
-                    Toast.makeText(context,
-                        context.getString(R.string.we_will_send_an_email_to_verify_your_email_address), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.we_will_send_an_email_to_verify_your_email_address),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             )
         )
@@ -101,7 +104,7 @@ fun CreatePasswordScreenContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 16.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
 
@@ -120,7 +123,7 @@ fun CreatePasswordScreenContent(
             fontFamily = Montserrat,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onBackground,
         )
         SpacerVertical16()
         OutlinedTextField(
@@ -146,17 +149,26 @@ fun CreatePasswordScreenContent(
         Text(
             text = stringResource(R.string._8_characters_20_max),
             fontSize = 14.sp,
-            modifier = Modifier.padding(bottom = 4.dp)
+            modifier = Modifier.padding(bottom = 4.dp),
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.Normal,
+            fontFamily = Montserrat
         )
         Text(
             text = stringResource(R.string._1_letter_1_number_1_special_character),
             fontSize = 14.sp,
-            modifier = Modifier.padding(bottom = 4.dp)
+            modifier = Modifier.padding(bottom = 4.dp),
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.Normal,
+            fontFamily = Montserrat
         )
         Text(
             text = stringResource(R.string.strong_password),
             fontSize = 14.sp,
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = 16.dp),
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.Normal,
+            fontFamily = Montserrat
         )
         Button(
             onClick = {
@@ -174,9 +186,8 @@ fun CreatePasswordScreenContent(
             enabled = isPasswordValid(passwordState)
         ) {
             if (isLoading) {
-                CircularProgressIndicator(color = Color.White,)
-            }
-            else{
+                CircularProgressIndicator(color = Color.White)
+            } else {
                 Text(
                     text = stringResource(R.string._continue),
                     fontSize = 16.sp,

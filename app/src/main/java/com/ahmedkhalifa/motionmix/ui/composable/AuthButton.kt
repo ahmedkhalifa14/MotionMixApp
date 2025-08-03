@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,7 +25,7 @@ import com.ahmedkhalifa.motionmix.ui.theme.FooterColor
 import com.ahmedkhalifa.motionmix.ui.theme.Montserrat
 
 @Composable
-fun AuthButton(text: String, icon: Int, onClick: () -> Unit) {
+fun AuthButton(text: String, icon: Int,tint: Color=Color.Unspecified ,onClick: () -> Unit) {
     OutlinedButton(
         onClick = { onClick() },
         modifier = Modifier
@@ -36,16 +37,16 @@ fun AuthButton(text: String, icon: Int, onClick: () -> Unit) {
 //            defaultElevation = 1.dp
 //        ),
 ,
-        colors = ButtonDefaults.buttonColors(Color.White)
+        colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.background)
     ) {
         Icon(
             painter = painterResource(id = icon), contentDescription = "Login Icon",
-            tint = Color.Unspecified
+            tint = tint
         )
         Spacer(Modifier.size(ButtonDefaults.IconSpacing))
         Text(
             text = text,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Medium,
             fontFamily = Montserrat
         )
@@ -60,6 +61,6 @@ fun AuthButton(text: String, icon: Int, onClick: () -> Unit) {
 @Composable
 fun PreviewAuthButton() {
     Box(modifier = Modifier.fillMaxWidth()) {
-        AuthButton("Google", R.drawable.instagram_icon) {}
+        AuthButton("Google", R.drawable.instagram_icon,Color.Unspecified){}
     }
 }

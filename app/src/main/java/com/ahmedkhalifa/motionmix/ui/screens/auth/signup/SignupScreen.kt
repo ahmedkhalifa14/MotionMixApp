@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -30,6 +31,7 @@ import com.ahmedkhalifa.motionmix.ui.composable.AuthHeader
 import com.ahmedkhalifa.motionmix.ui.composable.AuthTitle
 import com.ahmedkhalifa.motionmix.ui.composable.SpacerVertical16
 import com.ahmedkhalifa.motionmix.ui.graphs.AuthScreen
+import com.ahmedkhalifa.motionmix.ui.graphs.BottomBarScreen
 import com.ahmedkhalifa.motionmix.ui.graphs.Graph
 
 @Composable
@@ -66,7 +68,7 @@ fun SignupScreen(
                         ),
                         Toast.LENGTH_SHORT
                     ).show()
-                    navController.navigate(Graph.HOME)
+                    navController.navigate(BottomBarScreen.Home.route)
                 }
             )
         )
@@ -78,7 +80,8 @@ fun SignupScreen(
             onClick = {
                 Toast.makeText(context, "clicked", Toast.LENGTH_LONG).show()
                 navController.navigate("EMAIL_PHONE_TAB/Register")
-            }
+            },
+            tint = MaterialTheme.colorScheme.onBackground
         ),
         AuthMethod(
             text = stringResource(R.string.continue_with_facebook),
@@ -99,7 +102,8 @@ fun SignupScreen(
             iconResId = R.drawable.x,
             onClick = {
                 // handle X login
-            }
+            },
+            tint = MaterialTheme.colorScheme.onBackground
         ),
         AuthMethod(
             text = stringResource(R.string.continue_with_instagram),
@@ -131,7 +135,7 @@ fun SignupScreenContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 16.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
 
@@ -155,7 +159,8 @@ fun SignupScreenContent(
                 onClick = {
                     authMethod.onClick()
                 },
-                icon = authMethod.iconResId
+                icon = authMethod.iconResId,
+                tint = authMethod.tint
             )
             SpacerVertical16()
         }

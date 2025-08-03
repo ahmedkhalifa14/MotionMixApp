@@ -33,15 +33,29 @@ import com.ahmedkhalifa.motionmix.ui.theme.Montserrat
 
 @Composable
 fun EmailTabScreen(
-    navController: NavController
+    navController: NavController,
+    mode: String
 ) {
     EmailTabScreenContent(
         onClickNext = { email ->
-            navController.navigate("PASSWORD/$email") {
-                popUpTo("email") {
-                    inclusive = true
+            when (mode) {
+                "Login" -> {
+                    navController.navigate("ENTER_PASSWORD/$email"){
+                        popUpTo("email"){
+                            inclusive =true
+                        }
+                    }
+                }
+
+                "Register" -> {
+                    navController.navigate("PASSWORD/$email") {
+                        popUpTo("email") {
+                            inclusive = true
+                        }
+                    }
                 }
             }
+
         }
     )
 }
@@ -121,6 +135,7 @@ fun EmailTabScreenContent(
 @Preview(showSystemUi = true, showBackground = true)
 fun PreviewEmailTabScreen() {
     EmailTabScreen(
-        navController = rememberNavController()
+        navController = rememberNavController(),
+        ""
     )
 }

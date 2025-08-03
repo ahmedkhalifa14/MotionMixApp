@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -26,10 +27,10 @@ fun AuthFooter(text1: String, text2: String, onClickAuth: () -> Unit) {
             append(text1)
             withStyle(
                 SpanStyle(
-                    fontWeight = FontWeight.SemiBold,
+                    fontWeight = FontWeight.Bold,
                     fontFamily = Montserrat,
                     color = AppMainColor,
-                    fontSize = 14.sp
+                    fontSize = 18.sp
 
                 )
             ) {
@@ -39,11 +40,11 @@ fun AuthFooter(text1: String, text2: String, onClickAuth: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClickAuth() }
-            .background(FooterColor)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(20.dp),
         textAlign = TextAlign.Center,
-        color = Color.Black,
-        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onBackground,
+        fontWeight = FontWeight.Bold,
         fontFamily = Montserrat,
         fontSize = 14.sp,
     )
