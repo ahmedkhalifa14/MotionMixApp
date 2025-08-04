@@ -1,61 +1,66 @@
 package com.ahmedkhalifa.motionmix.common.helpers
 
-
-// ImagePickerManager.kt
-
 import android.content.Context
-import android.graphics.Bitmap
-import android.net.Uri
 import java.io.File
-import java.io.FileOutputStream
-import java.util.UUID
+import java.text.SimpleDateFormat
+import java.util.*
 
 class ImagePickerManager(private val context: Context) {
 
-    /**
-     * Save bitmap to cache directory and return URI
-     */
-    fun saveBitmapToCache(bitmap: Bitmap): Uri? {
-        return try {
-            val cacheDir = File(context.cacheDir, "profile_images")
-            if (!cacheDir.exists()) {
-                cacheDir.mkdirs()
-            }
-
-            val imageFile = File(cacheDir, "profile_${UUID.randomUUID()}.jpg")
-            val outputStream = FileOutputStream(imageFile)
-
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
-            outputStream.flush()
-            outputStream.close()
-
-            Uri.fromFile(imageFile)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
-    /**
-     * Get cache directory for temporary files
-     */
+    // FIXED: Use filesDir instead of cacheDir for persistent storage
     fun getCacheImageFile(): File {
-        val cacheDir = File(context.cacheDir, "profile_images")
-        if (!cacheDir.exists()) {
-            cacheDir.mkdirs()
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val imageFileName = "temp_profile_${timeStamp}.jpg"
+
+        // Create directory in app's internal files (persistent, not cache)
+        val storageDir = File(context.filesDir, "profile_images")
+        if (!storageDir.exists()) {
+            storageDir.mkdirs()
         }
-        return File(cacheDir, "temp_${UUID.randomUUID()}.jpg")
+
+        return File(storageDir, imageFileName)
     }
 
-    /**
-     * Clean up temporary files
-     */
+    // Get a persistent file for camera capture
+    fun getCameraImageFile(): File {
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val imageFileName = "camera_${timeStamp}.jpg"
+
+        val storageDir = File(context.filesDir, "profile_images")
+        if (!storageDir.exists()) {
+            storageDir.mkdirs()
+        }
+
+        return File(storageDir, imageFileName)
+    }
+
+    // FIXED: Clean up old files but keep recent ones
     fun cleanupTempFiles() {
         try {
-            val cacheDir = File(context.cacheDir, "profile_images")
-            if (cacheDir.exists()) {
-                cacheDir.listFiles()?.forEach { file ->
-                    if (file.name.startsWith("temp_")) {
+            val storageDir = File(context.filesDir, "profile_images")
+            if (storageDir.exists()) {
+                val files = storageDir.listFiles()
+                files?.forEach { file ->
+                    // Keep files created in the last hour, delete older temp files
+                    val hourAgo = System.currentTimeMillis() - (60 * 60 * 1000)
+                    if (file.lastModified() < hourAgo && file.name.startsWith("temp_")) {
+                        file.delete()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    // Optional: Clean up all temp files (use carefully)
+    fun cleanupAllTempFiles() {
+        try {
+            val storageDir = File(context.filesDir, "profile_images")
+            if (storageDir.exists()) {
+                val files = storageDir.listFiles()
+                files?.forEach { file ->
+                    if (file.name.startsWith("temp_") || file.name.startsWith("camera_")) {
                         file.delete()
                     }
                 }

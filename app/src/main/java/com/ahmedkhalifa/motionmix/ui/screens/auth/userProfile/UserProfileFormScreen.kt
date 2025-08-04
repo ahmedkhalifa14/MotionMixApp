@@ -2,6 +2,7 @@ package com.ahmedkhalifa.motionmix.ui.screens.auth.userProfile
 
 
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -60,6 +61,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -96,6 +98,7 @@ fun UserProfileFormScreen(
                 context,
                 context.getString(R.string.user_profile_data_saved_successfully), Toast.LENGTH_SHORT
             ).show()
+
 //            navController.navigate(Graph.HOME) {
 //                popUpTo(AuthScreen.UserProfileForm.route) { inclusive = true }
 //            }
@@ -109,13 +112,13 @@ fun UserProfileFormScreen(
     LaunchedEffect(saveUserProfileState.value) {
         saveUserProfileEventObserver.emit(saveUserProfileState.value)
     }
-
     UserProfileFormScreenContent(
         isLoading = isLoading,
         onNavigateBack = { navController.popBackStack() },
-        onSaveData = { user ->
-            userProfileViewModel.saveUserProfileData(user)
+        onSaveData = { user, imgUrl ->
+            userProfileViewModel.saveUserProfileData(user, imgUrl,context)
         }
+
     )
 }
 
@@ -124,7 +127,7 @@ fun UserProfileFormScreen(
 fun UserProfileFormScreenContent(
     isLoading: Boolean,
     onNavigateBack: () -> Unit = {},
-    onSaveData: (User) -> Unit = {}
+    onSaveData: (User, Uri?) -> Unit
 ) {
     var userData by remember { mutableStateOf(User()) }
     var isLoadingLocation by remember { mutableStateOf(false) }
@@ -201,7 +204,11 @@ fun UserProfileFormScreenContent(
             actions = {
                 TextButton(
                     onClick = {
-                        onSaveData(userData)
+                        val userWithImage = userData.copy(
+                            profilePictureLink = profilePictureUri?.toString() ?: ""
+                        )
+                        onSaveData(userWithImage, profilePictureUri)
+
                     }
                 ) {
                     Text(
@@ -231,8 +238,8 @@ fun UserProfileFormScreenContent(
                 profilePictureUri = profilePictureUri,
                 onProfilePictureChange = { uri ->
                     profilePictureUri = uri
-                    // Convert URI to string for User object if needed
                     userData = userData.copy(profilePictureLink = uri?.toString() ?: "")
+                    Log.d("imageUrl", profilePictureUri.toString() + "  s")
                 }
             )
 
@@ -364,7 +371,7 @@ fun UserProfileFormScreenContent(
                         val userWithImage = userData.copy(
                             profilePictureLink = profilePictureUri?.toString() ?: ""
                         )
-                        onSaveData(userData)
+                        onSaveData(userWithImage, profilePictureUri)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -376,8 +383,7 @@ fun UserProfileFormScreenContent(
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(color = Color.White)
-                    }
-                    else{
+                    } else {
                         Text(
                             text = stringResource(R.string.complete_profile),
                             fontSize = 16.sp,

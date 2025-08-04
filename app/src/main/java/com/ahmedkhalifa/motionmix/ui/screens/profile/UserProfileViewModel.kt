@@ -1,5 +1,7 @@
 package com.ahmedkhalifa.motionmix.ui.screens.profile
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ahmedkhalifa.motionmix.common.utils.Event
@@ -38,11 +40,11 @@ class UserProfileViewModel @Inject constructor(
 
 
 
-    fun saveUserProfileData(user: User) {
+    fun saveUserProfileData(user: User,imageUri: Uri?,context: Context) {
         viewModelScope.launch {
             _saveUserProfileState.emit(Event(Resource.Loading()))
             try {
-                userProfileRepo.saveUserInfo(user)
+                userProfileRepo.saveUserInfo(user,imageUri,context)
                 _saveUserProfileState.emit(Event(Resource.Success(Unit)))
             } catch (e: Exception) {
                 _saveUserProfileState.emit(Event(Resource.Error(e.message.toString())))

@@ -1,5 +1,7 @@
 package com.ahmedkhalifa.motionmix.data.repository.user_profile
 
+import android.content.Context
+import android.net.Uri
 import com.ahmedkhalifa.motionmix.common.utils.Resource
 import com.ahmedkhalifa.motionmix.common.utils.Utils.tryCatch
 import com.ahmedkhalifa.motionmix.data.model.User
@@ -12,10 +14,10 @@ import javax.inject.Inject
 class UserProfileRepoImpl @Inject constructor(
     private val fireStoreService: FireStoreService
 ) : UserProfileRepo {
-    override suspend fun saveUserInfo(user: User): Resource<Unit> =
+    override suspend fun saveUserInfo(user: User,imageUri: Uri?,context: Context): Resource<Unit> =
         withContext(Dispatchers.IO) {
             tryCatch {
-                val saveUserProfileResult = fireStoreService.saveUserInfo(user)
+                val saveUserProfileResult = fireStoreService.saveUserInfo(user, imageUri = imageUri,context)
                 Resource.Success(saveUserProfileResult)
             }
         }
