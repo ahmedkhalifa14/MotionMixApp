@@ -1,17 +1,30 @@
 package com.ahmedkhalifa.motionmix.data.model
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
 data class Reel(
-    val id: String,
-    val mediaUrl: String,
-    val thumbnailUrl: String,
-    val description: String,
-    val author: String,
-    val likesCount: Int,
-    val commentsCount: Int,
-    val sharesCount: Int,
-    val isLiked: Boolean = false
+    val id: String = "",
+    val author: String = "",
+    val description: String = "",
+    val mediaUrl: String = "",
+    val thumbnailUrl: String = "",
+    val likesCount: Int = 0,
+    val commentsCount: Int = 0,
+    val sharesCount: Int = 0,
+    val isLiked: Boolean = false,
+    val likedUserIds: List<String> = emptyList(),
+    val comments: List<Comment> = emptyList()
+    // Add defaults for any other properties
 )
+@Parcelize
+data class Comment(
+    val id: String, // Unique ID for the comment
+    val userId: String, // ID of the user who commented
+    val text: String,
+    val timestamp: Long
+) : Parcelable
+
 
 fun getSampleVideos(): List<Reel> {
     return listOf(

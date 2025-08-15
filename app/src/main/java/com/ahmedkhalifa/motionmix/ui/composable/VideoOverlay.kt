@@ -17,11 +17,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.filled.VolumeOff
-import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Comment
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -44,17 +44,23 @@ import coil.compose.rememberAsyncImagePainter
 import com.ahmedkhalifa.motionmix.data.model.Reel
 import androidx.compose.ui.draw.alpha
 import androidx.media3.common.util.UnstableApi
-import com.ahmedkhalifa.motionmix.common.ExoPlayerManager
+import androidx.media3.exoplayer.ExoPlayer
 
 @OptIn(UnstableApi::class)
 @Composable
-fun VideoOverlay(reel: Reel, isLoading: Boolean = false, modifier: Modifier = Modifier) {
+fun VideoOverlay(
+    reel: Reel,
+    isMuted: Boolean,
+    player: ExoPlayer, // Added to handle mute/unmute
+    isLoading: Boolean = false,
+    onToggleLike: () -> Unit,
+    onToggleMute: () -> Unit,
+    onCommentClick: () -> Unit,
+    onShareClick: () -> Unit,
+    onMoreClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val context = LocalContext.current
-    val exoPlayer = ExoPlayerManager.getPlayer(context)
-    val isMuted = remember { mutableStateOf(exoPlayer.volume == 0f) }
-    // Use mutableStateOf to allow updating like state
-    val isLiked = remember { mutableStateOf(reel.isLiked) }
-    val likesCount = remember { mutableStateOf(reel.likesCount) }
     val alpha = remember { Animatable(if (isLoading) 0f else 1f) }
 
     // Fade-in/out based on loading state
@@ -117,7 +123,7 @@ fun VideoOverlay(reel: Reel, isLoading: Boolean = false, modifier: Modifier = Mo
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Image(
-                painter = rememberAsyncImagePainter(reel.thumbnailUrl), // Use thumbnail or profile URL
+                painter = rememberAsyncImagePainter(reel.thumbnailUrl),
                 contentDescription = "Profile Picture",
                 modifier = Modifier
                     .size(60.dp)
@@ -127,43 +133,35 @@ fun VideoOverlay(reel: Reel, isLoading: Boolean = false, modifier: Modifier = Mo
                 contentScale = ContentScale.Crop
             )
             ActionButton(
-                icon = if (isMuted.value) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp,
+                icon = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
                 text = "",
-                onClick = {
-                    isMuted.value = !isMuted.value
-                    exoPlayer.volume = if (isMuted.value) 0f else 1f
-                }
+                onClick = onToggleMute
             )
             ActionButton(
-                icon = if (isLiked.value) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                text = likesCount.value.toString(),
-                tint = if (isLiked.value) Color.Red else Color.White
-            ) {
-                isLiked.value = !isLiked.value
-                likesCount.value = if (isLiked.value) likesCount.value + 1 else likesCount.value - 1
-                // TODO: Update backend or local data store with new like state
-            }
+                icon = if (reel.isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                text = reel.likesCount.toString(),
+                tint = if (reel.isLiked) Color.Red else Color.White,
+                onClick = onToggleLike
+            )
             ActionButton(
-                icon = Icons.Filled.Face,
-                text = reel.commentsCount.toString()
-            ) {
-                // TODO: Handle comment click (e.g., open comments screen)
-            }
+                icon = Icons.AutoMirrored.Filled.Comment,
+                text = reel.commentsCount.toString(),
+                onClick = onCommentClick
+            )
             ActionButton(
                 icon = Icons.Filled.Share,
-                text = reel.sharesCount.toString()
-            ) {
-                // TODO: Handle share click (e.g., open share intent)
-            }
+                text = reel.sharesCount.toString(),
+                onClick = onShareClick
+            )
             ActionButton(
                 icon = Icons.Filled.MoreVert,
-                text = ""
-            ) {
-                // TODO: Handle more options click (e.g., show menu)
-            }
+                text = "",
+                onClick = onMoreClick
+            )
         }
     }
 }
+
 @Composable
 fun ActionButton(
     icon: ImageVector,
@@ -214,7 +212,7 @@ fun ActionButton(
                 onClick()
             }
             .semantics { contentDescription = description }
-            .padding(8.dp)
+            .padding(4.dp)
     ) {
         Icon(
             imageVector = icon,
@@ -225,7 +223,7 @@ fun ActionButton(
                 .scale(scale.value)
         )
         if (text.isNotBlank()) {
-            Spacer( modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.dp))
             Text(text = text, color = Color.White, fontSize = 12.sp)
         }
     }

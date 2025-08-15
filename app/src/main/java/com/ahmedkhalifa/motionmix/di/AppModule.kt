@@ -10,9 +10,11 @@ import com.ahmedkhalifa.motionmix.data.repository.app_pref.AppPreferencesRepoImp
 import com.ahmedkhalifa.motionmix.data.repository.auth.AuthRepoImpl
 import com.ahmedkhalifa.motionmix.data.repository.post_reel.ReelRepositoryImpl
 import com.ahmedkhalifa.motionmix.data.repository.post_reel.VideoUploadRepositoryImpl
+import com.ahmedkhalifa.motionmix.data.repository.reel_actions.ReelActionsRepoImpl
 import com.ahmedkhalifa.motionmix.data.repository.user_profile.UserProfileRepoImpl
 import com.ahmedkhalifa.motionmix.domain.repo.app_preferences.AppPreferencesRepo
 import com.ahmedkhalifa.motionmix.domain.repo.auth.AuthRepo
+import com.ahmedkhalifa.motionmix.domain.repo.reel_actions.ReelActionsRepo
 import com.ahmedkhalifa.motionmix.domain.repo.user_profile.UserProfileRepo
 import com.ahmedkhalifa.motionmix.domain.repo.video_upload.ReelRepository
 import com.ahmedkhalifa.motionmix.domain.repo.video_upload.VideoUploadRepository
@@ -85,6 +87,12 @@ object AppModule {
     fun provideUserProfileRepo(
         fireStoreService: FireStoreService
     ): UserProfileRepo = UserProfileRepoImpl(fireStoreService)
+
+
+    @Provides
+    fun provideReelActionsRepo(
+        fireStoreService: FireStoreService
+    ): ReelActionsRepo = ReelActionsRepoImpl(fireStoreService)
 
     @Provides
     fun provideUploadVideoUseCase(

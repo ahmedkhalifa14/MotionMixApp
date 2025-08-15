@@ -1,5 +1,6 @@
 package com.ahmedkhalifa.motionmix.ui.composable
 
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -41,6 +42,9 @@ fun CustomTextField(
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     focusRequester: FocusRequester = remember { FocusRequester() }
 ) {
+    // Debug log to confirm keyboardType
+    Log.d("CustomTextField", "KeyboardType for $label: $keyboardType")
+
     Column(modifier = modifier) {
         Text(
             text = label,

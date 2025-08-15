@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.googleGmsGoogleServices)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    id("org.jetbrains.kotlin.plugin.parcelize")
 }
 
 android {
@@ -76,6 +77,7 @@ dependencies {
     implementation(libs.google.signin)
     implementation(libs.googleid)
     implementation(libs.play.services.location)
+    implementation(libs.androidx.room.runtime.android)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
@@ -92,10 +94,12 @@ dependencies {
     // Accompanist
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.36.0")
 
-// ExoPlayer (Media3)
+    // ExoPlayer (Media3)
     implementation("androidx.media3:media3-exoplayer:1.3.1")
     implementation("androidx.media3:media3-ui:1.3.1")
     implementation("androidx.media3:media3-exoplayer-hls:1.3.1")
+    implementation("androidx.media3:media3-exoplayer-dash:1.4.0")
+
     // Coil
     implementation("io.coil-kt:coil-compose:2.7.0")
 
@@ -108,14 +112,6 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
 
     implementation("androidx.compose.material:material-icons-extended:1.7.0")
-
     implementation("androidx.compose.runtime:runtime:1.7.0")
-    implementation("androidx.media3:media3-exoplayer-dash:1.4.0")
-    //datastore
     implementation("androidx.datastore:datastore-preferences:1.0.0")
-    implementation("androidx.credentials:credentials:1.3.0")
-    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
-
-
-
 }

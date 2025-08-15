@@ -43,7 +43,6 @@ fun ImagePickerHandler(
                 cropError?.printStackTrace()
             }
         }
-        // Don't clean up immediately - the file is still needed for upload
         onDismiss()
     }
 

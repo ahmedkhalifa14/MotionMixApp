@@ -1,6 +1,5 @@
 package com.ahmedkhalifa.motionmix.ui.screens.auth.userProfile
 
-
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -25,7 +24,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -60,25 +58,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.ahmedkhalifa.motionmix.R
 import com.ahmedkhalifa.motionmix.common.utils.EventObserver
+import com.ahmedkhalifa.motionmix.common.utils.LocationResult
 import com.ahmedkhalifa.motionmix.data.model.User
 import com.ahmedkhalifa.motionmix.services.LocationService
 import com.ahmedkhalifa.motionmix.ui.composable.CustomTextField
 import com.ahmedkhalifa.motionmix.ui.composable.LocationTextField
 import com.ahmedkhalifa.motionmix.ui.composable.ProfilePictureSection
-
-import kotlinx.coroutines.launch
-import com.ahmedkhalifa.motionmix.common.utils.LocationResult
-import com.ahmedkhalifa.motionmix.ui.graphs.AuthScreen
-import com.ahmedkhalifa.motionmix.ui.graphs.Graph
 import com.ahmedkhalifa.motionmix.ui.screens.profile.UserProfileViewModel
 import com.ahmedkhalifa.motionmix.ui.theme.AppMainColor
+import kotlinx.coroutines.launch
 
 @Composable
 fun UserProfileFormScreen(
@@ -98,10 +91,9 @@ fun UserProfileFormScreen(
                 context,
                 context.getString(R.string.user_profile_data_saved_successfully), Toast.LENGTH_SHORT
             ).show()
-
-//            navController.navigate(Graph.HOME) {
-//                popUpTo(AuthScreen.UserProfileForm.route) { inclusive = true }
-//            }
+            // navController.navigate(Graph.HOME) {
+            //     popUpTo(AuthScreen.UserProfileForm.route) { inclusive = true }
+            // }
         },
         onError = { errorMessage ->
             isLoading = false
@@ -116,9 +108,8 @@ fun UserProfileFormScreen(
         isLoading = isLoading,
         onNavigateBack = { navController.popBackStack() },
         onSaveData = { user, imgUrl ->
-            userProfileViewModel.saveUserProfileData(user, imgUrl,context)
+            userProfileViewModel.saveUserProfileData(user, imgUrl, context)
         }
-
     )
 }
 
@@ -137,8 +128,18 @@ fun UserProfileFormScreenContent(
     val coroutineScope = rememberCoroutineScope()
     val locationService = remember { LocationService(context) }
 
+    // Validate all required fields
+    val areFieldsValid by remember(userData) {
+        mutableStateOf(
+            userData.firstName.isNotBlank() &&
+                    userData.lastName.isNotBlank() &&
+                    userData.email.isNotBlank() &&
+                    userData.phoneNumber.isNotBlank() &&
+                    userData.location.isNotBlank()
+        )
+    }
 
-    //keyboardController
+    // KeyboardController
     val firstNameFocusRequester = remember { FocusRequester() }
     val lastnameFocusRequester = remember { FocusRequester() }
     val phoneNumberFocusRequester = remember { FocusRequester() }
@@ -146,24 +147,20 @@ fun UserProfileFormScreenContent(
     val locationFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
-
     // Location permission launcher
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val hasPermission = permissions.values.any { it }
-
         if (hasPermission) {
             isLoadingLocation = true
             locationError = null
-
             coroutineScope.launch {
                 when (val result = locationService.getCurrentLocationAddress()) {
                     is LocationResult.Success -> {
                         userData = userData.copy(location = result.address)
                         locationError = null
                     }
-
                     is LocationResult.Error -> {
                         locationError = result.message
                     }
@@ -208,14 +205,14 @@ fun UserProfileFormScreenContent(
                             profilePictureLink = profilePictureUri?.toString() ?: ""
                         )
                         onSaveData(userWithImage, profilePictureUri)
-
-                    }
+                    },
+                    enabled = areFieldsValid && !isLoading
                 ) {
                     Text(
                         text = stringResource(R.string.save),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = AppMainColor
+                        color = if (areFieldsValid) AppMainColor else Color.Gray
                     )
                 }
             },
@@ -279,7 +276,6 @@ fun UserProfileFormScreenContent(
                             emailFocusRequester.requestFocus()
                         }
                     )
-
                 )
 
                 // Email
@@ -302,7 +298,11 @@ fun UserProfileFormScreenContent(
                 // Phone Number
                 CustomTextField(
                     value = userData.phoneNumber,
-                    onValueChange = { userData = userData.copy(phoneNumber = it) },
+                    onValueChange = { input ->
+                        if (input.matches(Regex("[0-9+()-]*"))) {
+                            userData = userData.copy(phoneNumber = input)
+                        }
+                    },
                     label = stringResource(R.string.phone_number),
                     placeholder = stringResource(R.string.enter_your_phone_number),
                     leadingIcon = Icons.Default.Phone,
@@ -324,17 +324,14 @@ fun UserProfileFormScreenContent(
                     error = locationError,
                     onGetCurrentLocation = {
                         locationError = null
-
                         if (locationService.hasLocationPermission()) {
                             isLoadingLocation = true
-
                             coroutineScope.launch {
                                 when (val result = locationService.getCurrentLocationAddress()) {
                                     is LocationResult.Success -> {
                                         userData = userData.copy(location = result.address)
                                         locationError = null
                                     }
-
                                     is LocationResult.Error -> {
                                         locationError = result.message
                                     }
@@ -378,8 +375,10 @@ fun UserProfileFormScreenContent(
                         .height(56.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = AppMainColor
-                    )
+                        containerColor = AppMainColor,
+                        disabledContainerColor = Color.Gray
+                    ),
+                    enabled = areFieldsValid && !isLoading
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(color = Color.White)
@@ -388,10 +387,9 @@ fun UserProfileFormScreenContent(
                             text = stringResource(R.string.complete_profile),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White,
+                            color = if (areFieldsValid) Color.White else Color.White.copy(alpha = 0.5f)
                         )
                     }
-
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -404,14 +402,14 @@ fun UserProfileFormScreenContent(
                         .height(56.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     ),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurfaceVariant)
                 ) {
                     Text(
                         text = stringResource(R.string.skip_for_now),
                         fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -419,7 +417,6 @@ fun UserProfileFormScreenContent(
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
-
 }
 
 @Preview(showBackground = true)

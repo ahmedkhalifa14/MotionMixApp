@@ -162,7 +162,7 @@ fun VideoPlayerView(
                     if (networkSpeed < 100) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "شبكة بطيئة ($networkSpeed kbps)",
+                            text = "slow network($networkSpeed kbps)",
                             color = Color.White.copy(alpha = 0.7f),
                             fontSize = 14.sp,
                             textAlign = TextAlign.Center
@@ -196,7 +196,7 @@ fun VideoPlayerView(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "اضغط لإعادة المحاولة",
+                    text = "Click to try again",
                     color = Color.White.copy(alpha = 0.7f),
                     fontSize = 14.sp
                 )
