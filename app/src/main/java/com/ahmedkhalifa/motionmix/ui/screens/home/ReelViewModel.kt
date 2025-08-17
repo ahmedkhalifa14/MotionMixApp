@@ -1,5 +1,6 @@
 package com.ahmedkhalifa.motionmix.ui.screens.home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ahmedkhalifa.motionmix.common.utils.Event
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import androidx.media3.exoplayer.ExoPlayer
+import com.google.firebase.firestore.DocumentSnapshot
 import java.util.UUID
 import javax.inject.Inject
 
@@ -22,6 +24,9 @@ class ReelViewModel @Inject constructor(
     private val reelActionsRepo: ReelActionsRepo,
     private val firebaseAuth: FirebaseAuth
 ) : ViewModel() {
+
+    private val _reelsState = MutableStateFlow<List<Reel>>(emptyList())
+    val reelsState: StateFlow<List<Reel>> = _reelsState.asStateFlow()
 
     private val _getReelsState = MutableStateFlow<Event<Resource<List<Reel>>>>(Event(Resource.Init()))
     val getReelsState: StateFlow<Event<Resource<List<Reel>>>> = _getReelsState.asStateFlow()
@@ -35,53 +40,116 @@ class ReelViewModel @Inject constructor(
     private val _incrementSharesState = MutableStateFlow<Event<Resource<Boolean>>>(Event(Resource.Init()))
     val incrementSharesState: StateFlow<Event<Resource<Boolean>>> = _incrementSharesState.asStateFlow()
 
-    private val _reelsState = MutableStateFlow<List<Reel>>(emptyList())
-    val reelsState: StateFlow<List<Reel>> = _reelsState.asStateFlow()
-
     private val _isMuted = MutableStateFlow(false)
     val isMuted: StateFlow<Boolean> = _isMuted.asStateFlow()
 
-    private val _currentReelIndex = MutableStateFlow(0)
-    val currentReelIndex: StateFlow<Int> = _currentReelIndex.asStateFlow()
+    private val _isLoadingMore = MutableStateFlow(false)
+    val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
 
-    init {
-        getReels()
-    }
+    private var lastDocument: DocumentSnapshot? = null
+    private var hasMoreData = true
+    private val pageSize = 10L
 
     fun getReels() {
         viewModelScope.launch {
+            Log.d("ReelViewModel", "Starting getReels()")
             _getReelsState.emit(Event(Resource.Loading()))
+
             try {
-                val getReelsResult = reelActionsRepo.getReels()
+                lastDocument = null
+                hasMoreData = true
+
+                Log.d("ReelViewModel", "Calling reelActionsRepo.getReelsPaginated...")
+                val getReelsResult = reelActionsRepo.getReelsPaginated(
+                    limit = pageSize,
+                    lastDocument = null
+                )
+
+                Log.d("ReelViewModel", "Repository result type: ${getReelsResult::class.simpleName}")
+
                 when (getReelsResult) {
                     is Resource.Success -> {
-                        val currentUserId = firebaseAuth.currentUser?.uid ?: ""
-                        val updatedReels = getReelsResult.data?.map { reel ->
-                            reel.copy(isLiked = currentUserId in reel.likedUserIds)
-                        } ?: emptyList()
-                        _reelsState.value = updatedReels
-                    }
+                        Log.d("ReelViewModel", "Resource.Success received")
+                        val (reels, newLastDoc) = getReelsResult.data ?: Pair(emptyList<Reel>(), null)
+                        Log.d("ReelViewModel", "Data extracted: ${reels.size} reels")
 
+                        val currentUserId = firebaseAuth.currentUser?.uid ?: ""
+                        Log.d("ReelViewModel", "Current user ID: $currentUserId")
+
+                        val updatedReels = reels.map { reel ->
+                            Log.d("ReelViewModel", "Processing reel: ${reel.id}")
+                            reel.copy(isLiked = currentUserId in reel.likedUserIds)
+                        }
+
+                        Log.d("ReelViewModel", "Setting ${updatedReels.size} reels to state")
+                        _reelsState.value = updatedReels
+                        lastDocument = newLastDoc
+                        hasMoreData = reels.size >= pageSize
+
+                        _getReelsState.emit(Event(Resource.Success(updatedReels)))
+                        Log.d("ReelViewModel", "Successfully emitted success state")
+                    }
+                    is Resource.Error -> {
+                        Log.e("ReelViewModel", "Resource.Error: ${getReelsResult.message}")
+                        _getReelsState.emit(Event(Resource.Error(getReelsResult.message ?: "Unknown error")))
+                    }
+                    else -> {
+                        Log.e("ReelViewModel", "Unexpected result type: ${getReelsResult::class.simpleName}")
+                        _getReelsState.emit(Event(Resource.Error("Unexpected result")))
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("ReelViewModel", "Exception in getReels: ${e.message}", e)
+                _getReelsState.emit(Event(Resource.Error(e.message ?: "Unknown error")))
+            }
+        }
+    }
+    fun loadMoreReels() {
+        if (!hasMoreData || _isLoadingMore.value) return
+
+        viewModelScope.launch {
+            _isLoadingMore.value = true
+            try {
+                val getReelsResult = reelActionsRepo.getReelsPaginated(
+                    limit = pageSize,
+                    lastDocument = lastDocument
+                )
+
+                when (getReelsResult) {
+                    is Resource.Success -> {
+                        val (newReels, newLastDoc) = getReelsResult.data ?: Pair(emptyList<Reel>(), null)
+                        val currentUserId = firebaseAuth.currentUser?.uid ?: ""
+
+                        val updatedNewReels = newReels.map { reel ->
+                            reel.copy(isLiked = currentUserId in reel.likedUserIds)
+                        }
+
+                        _reelsState.value = _reelsState.value + updatedNewReels
+                        lastDocument = newLastDoc
+                        hasMoreData = newReels.size >= pageSize
+                    }
+                    is Resource.Error -> {
+                        Log.e("ReelViewModel", "Failed to load more reels: ${getReelsResult.message}")
+                    }
                     else -> {}
                 }
-                _getReelsState.emit(Event(getReelsResult))
             } catch (e: Exception) {
-                _getReelsState.emit(Event(Resource.Error(e.message.toString())))
+                Log.e("ReelViewModel", "Exception loading more reels: ${e.message}")
+            } finally {
+                _isLoadingMore.value = false
             }
         }
     }
 
-    fun setReels(reels: List<Reel>, player: ExoPlayer, index: Int) {
-        _reelsState.value = reels.map { reel ->
-            reel.copy(isLiked = firebaseAuth.currentUser?.uid in reel.likedUserIds)
+    fun checkAndLoadMore(currentIndex: Int) {
+        val totalItems = _reelsState.value.size
+        if (currentIndex >= totalItems - 3 && hasMoreData && !_isLoadingMore.value) {
+            loadMoreReels()
         }
-        _currentReelIndex.value = index
-        _isMuted.value = player.volume == 0f
     }
 
-    fun updateCurrentIndex(index: Int, player: ExoPlayer) {
-        _currentReelIndex.value = index
-        _isMuted.value = player.volume == 0f
+    fun refreshReels() {
+        getReels()
     }
 
     fun toggleLike(reelId: String) {
@@ -101,7 +169,6 @@ class ReelViewModel @Inject constructor(
                             }
                         }
                     }
-
                     else -> {}
                 }
                 _toggleLikeState.emit(Event(toggleLikeResult))
@@ -146,7 +213,6 @@ class ReelViewModel @Inject constructor(
                             }
                         }
                     }
-
                     else -> {}
                 }
                 _addCommentState.emit(Event(addCommentResult))
@@ -156,23 +222,25 @@ class ReelViewModel @Inject constructor(
         }
     }
 
-    fun incrementShares(reelId: String) {
-        viewModelScope.launch {
-            _incrementSharesState.emit(Event(Resource.Loading()))
-            try {
-                // Since incrementShares is not in your repo interface yet, 
-                // I'll just update the local state for now
-                _reelsState.value = _reelsState.value.map { reel ->
-                    if (reel.id == reelId) {
-                        reel.copy(sharesCount = reel.sharesCount + 1)
-                    } else {
-                        reel
-                    }
-                }
-                _incrementSharesState.emit(Event(Resource.Success(true)))
-            } catch (e: Exception) {
-                _incrementSharesState.emit(Event(Resource.Error(e.message.toString())))
-            }
-        }
-    }
+//    fun incrementShares(reelId: String) {
+//        viewModelScope.launch {
+//            _incrementSharesState.emit(Event(Resource.Loading()))
+//            try {
+//                val result = reelActionsRepo.incrementShares(reelId)
+//                if (result is Resource.Success && result.data == true) {
+//                    _reelsState.value = _reelsState.value.map { reel ->
+//                        if (reel.id == reelId) {
+//                            reel.copy(sharesCount = reel.sharesCount + 1)
+//                        } else {
+//                            reel
+//                        }
+//                    }
+//                }
+//                _incrementSharesState.emit(Event(result))
+//            } catch (e: Exception) {
+//                _incrementSharesState.emit(Event(Resource.Error(e.message.toString())))
+//            }
+//        }
+//    }
+
 }

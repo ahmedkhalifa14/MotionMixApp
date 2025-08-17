@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
 //                RootNavigationGraph(navController = navController)
 //            }
             MotionMixTheme {
-              //  PostReelScreen()
+                //PostReelScreen()
                 ReelsScreen(rememberNavController())
                 //UserProfileFormScreen(rememberNavController())
 

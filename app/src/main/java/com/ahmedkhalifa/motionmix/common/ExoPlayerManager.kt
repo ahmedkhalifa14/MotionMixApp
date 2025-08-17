@@ -1,8 +1,6 @@
 package com.ahmedkhalifa.motionmix.common
 
 import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -19,257 +17,217 @@ import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import androidx.media3.exoplayer.source.ProgressiveMediaSource
-import androidx.media3.exoplayer.hls.HlsMediaSource
-import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
-import androidx.media3.exoplayer.source.MediaSource
 import java.io.File
-import kotlin.math.min
+import java.util.concurrent.atomic.AtomicBoolean
 
+@Suppress("DEPRECATION")
 @UnstableApi
-object ExoPlayerManager {
+class ExoPlayerManager private constructor() {
+
+    companion object {
+        @Volatile
+        private var INSTANCE: ExoPlayerManager? = null
+        private const val TAG = "SinglePlayerManager"
+
+        fun getInstance(): ExoPlayerManager {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: ExoPlayerManager().also { INSTANCE = it }
+            }
+        }
+    }
+
     private var exoPlayer: ExoPlayer? = null
-    private var currentMediaItem: MediaItem? = null
-    private const val MAX_PRELOADED_ITEMS = 1
-    private const val TAG = "ExoPlayerManager"
+    private var currentMediaUrl: String? = null
     private var simpleCache: SimpleCache? = null
     private var cacheDataSourceFactory: CacheDataSource.Factory? = null
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val isInitialized = AtomicBoolean(false)
 
-    @Synchronized
-    fun getPlayer(context: Context): ExoPlayer {
-        if (exoPlayer == null) {
-            // Initialize cache
-            if (simpleCache == null) {
-                val cacheDir = File(context.cacheDir, "media_cache")
-                if (!cacheDir.exists()) cacheDir.mkdirs()
-                val evictor = LeastRecentlyUsedCacheEvictor(2000 * 1024 * 1024) // 2 GB cache
-                simpleCache = SimpleCache(cacheDir, evictor)
-            }
-
-            val httpDataSourceFactory = DefaultHttpDataSource.Factory()
-                .setConnectTimeoutMs(20000)
-                .setReadTimeoutMs(20000)
-                .setAllowCrossProtocolRedirects(true)
-
-            val defaultDataSourceFactory = DefaultDataSource.Factory(context, httpDataSourceFactory)
-
-            cacheDataSourceFactory = CacheDataSource.Factory()
-                .setCache(simpleCache!!)
-                .setUpstreamDataSourceFactory(defaultDataSourceFactory)
-                .setCacheWriteDataSinkFactory(CacheDataSink.Factory().setCache(simpleCache!!))
-                .setFlags(CacheDataSource.FLAG_BLOCK_ON_CACHE or CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
-                .setCacheKeyFactory { dataSpec -> dataSpec.uri.toString() }
-
-            val mediaSourceFactory = DefaultMediaSourceFactory(cacheDataSourceFactory!!)
-
-            val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            val capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
-            val maxBitrate = when {
-                capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true -> 6_000_000 // 6 Mbps
-                capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) == true -> 300_000 // 300 kbps
-                else -> 100_000 // Fallback
-            }
-
-            val trackSelector = DefaultTrackSelector(context).apply {
-                setParameters(
-                    buildUponParameters()
-                        .setMaxVideoBitrate(maxBitrate)
-                        .setForceLowestBitrate(false)
-                        .setAllowVideoMixedMimeTypeAdaptiveness(true)
-                )
-            }
-
-            exoPlayer = ExoPlayer.Builder(context)
-                .setTrackSelector(trackSelector)
-                .setLoadControl(
-                    DefaultLoadControl.Builder()
-                        .setBufferDurationsMs(
-                            40000,  // minBufferMs - increased
-                            200000, // maxBufferMs - increased
-                            3000,   // bufferForPlaybackMs
-                            3000    // bufferForPlaybackAfterRebufferMs
-                        )
-                        .setPrioritizeTimeOverSizeThresholds(true)
-                        .build()
-                )
-                .setMediaSourceFactory(mediaSourceFactory)
-                .build()
-
-            exoPlayer?.addListener(object : Player.Listener {
-                override fun onPlayerError(error: PlaybackException) {
-                    Log.e(TAG, "Playback error: ${error.message}, cause: ${error.cause}, code: ${error.errorCode}")
-                    when (error.errorCode) {
-                        PlaybackException.ERROR_CODE_IO_NO_PERMISSION -> Log.e(TAG, "Network permission denied")
-                        PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND -> Log.e(TAG, "Media file not found")
-                        PlaybackException.ERROR_CODE_DECODING_FAILED -> Log.e(TAG, "Decoding failed, check codec")
-                        PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS -> Log.e(TAG, "Bad HTTP status, check URL")
-                        else -> Log.e(TAG, "Unknown error: ${error.errorCode}")
-                    }
-                }
-
-                override fun onPlaybackStateChanged(state: Int) {
-                    val networkInfo = connectivityManager.activeNetworkInfo
-                    when (state) {
-                        Player.STATE_BUFFERING -> Log.d(TAG, "Buffering... Network: ${networkInfo?.typeName ?: "None"}, Speed: ${capabilities?.linkDownstreamBandwidthKbps ?: 0} kbps")
-                        Player.STATE_READY -> Log.d(TAG, "Ready to play")
-                        Player.STATE_ENDED -> Log.d(TAG, "Playback ended")
-                        Player.STATE_IDLE -> Log.d(TAG, "Player idle")
-                    }
-                }
-            })
-
-            Log.d(TAG, "ExoPlayer initialized with maxBitrate: $maxBitrate")
+    fun initializePlayer(context: Context): ExoPlayer {
+        if (exoPlayer == null && !isInitialized.get()) {
+            isInitialized.set(true)
+            setupCache(context)
+            createPlayer(context)
         }
         return exoPlayer!!
     }
 
-    @Synchronized
-    fun playMedia(context: Context, mediaUrl: String, retryCount: Int = 0): Boolean {
-        val player = getPlayer(context)
-        val newMediaItem = MediaItem.fromUri(mediaUrl)
+    private fun setupCache(context: Context) {
+        if (simpleCache == null) {
+            val cacheDir = File(context.cacheDir, "video_cache")
+            if (!cacheDir.exists()) cacheDir.mkdirs()
 
-        if (newMediaItem != currentMediaItem) {
-            resetPlayer()
-            val mediaSource = buildMediaSource(newMediaItem)
-            mainHandler.post {
-                player.setMediaSource(mediaSource)
-                player.prepare()
-            }
-            currentMediaItem = newMediaItem
+            val cacheSize = 500L * 1024 * 1024 // 500MB
+            val evictor = LeastRecentlyUsedCacheEvictor(cacheSize)
+            simpleCache = SimpleCache(cacheDir, evictor)
+            Log.d(TAG, "Cache initialized with size: $cacheSize bytes")
         }
 
-        try {
-            mainHandler.post { player.playWhenReady = true }
-            Log.d(TAG, "Playing media: $mediaUrl")
-            clearExcessMediaItems(context)
-            return true
-        } catch (e: Exception) {
-            Log.e(TAG, "Playback failed, attempt ${retryCount + 1}: ${e.message}", e)
-            if (retryCount < 3) {
-                Thread.sleep(min(1000L * (1 shl retryCount), 4000)) // Exponential backoff
-                mainHandler.post {
-                    player.trackSelector?.parameters?.buildUpon()
-                        ?.setMaxVideoBitrate(100_000) // Force lower bitrate
-                        ?.build()?.let {
-                            player.trackSelector?.setParameters(it)
-                        }
-                }
-                return playMedia(context, mediaUrl, retryCount + 1)
-            }
-            return false
+        if (cacheDataSourceFactory == null) {
+            val httpFactory = DefaultHttpDataSource.Factory()
+                .setConnectTimeoutMs(15000)
+                .setReadTimeoutMs(15000)
+
+            val dataSourceFactory = DefaultDataSource.Factory(context, httpFactory)
+
+            cacheDataSourceFactory = CacheDataSource.Factory()
+                .setCache(simpleCache!!)
+                .setUpstreamDataSourceFactory(dataSourceFactory)
+                .setCacheWriteDataSinkFactory(CacheDataSink.Factory().setCache(simpleCache!!))
         }
     }
 
-    @Synchronized
-    fun preloadMedia(context: Context, mediaUrl: String) {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
-        if ((capabilities?.linkDownstreamBandwidthKbps ?: 0) < 100) {
-            Log.d(TAG, "Skipping preload due to slow network: $mediaUrl")
+    private fun createPlayer(context: Context) {
+        val loadControl = DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                1500,  // min buffer
+                5000,  // max buffer
+                1000,  // buffer for playback
+                1500   // buffer for playback after rebuffer
+            )
+            .build()
+
+        val trackSelector = DefaultTrackSelector(context)
+
+        exoPlayer = ExoPlayer.Builder(context)
+            .setTrackSelector(trackSelector)
+            .setLoadControl(loadControl)
+            .setMediaSourceFactory(DefaultMediaSourceFactory(cacheDataSourceFactory!!))
+            .build()
+
+        exoPlayer?.apply {
+            repeatMode = Player.REPEAT_MODE_ONE
+            playWhenReady = false
+
+            addListener(object : Player.Listener {
+                override fun onPlaybackStateChanged(state: Int) {
+                    val stateStr = when (state) {
+                        Player.STATE_IDLE -> "IDLE"
+                        Player.STATE_BUFFERING -> "BUFFERING"
+                        Player.STATE_READY -> "READY"
+                        Player.STATE_ENDED -> "ENDED"
+                        else -> "UNKNOWN"
+                    }
+                    Log.d(TAG, "State: $stateStr for $currentMediaUrl")
+
+                    if (state == Player.STATE_ENDED) {
+                        seekTo(0)
+                        play()
+                    }
+                }
+
+                override fun onPlayerError(error: PlaybackException) {
+                    Log.e(TAG, "Player error for $currentMediaUrl: ${error.message}, cause: ${error.cause}")
+                }
+
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    Log.d(TAG, "Playing: $isPlaying for $currentMediaUrl")
+                }
+            })
+        }
+    }
+
+    fun playMedia(mediaUrl: String, onReady: () -> Unit = {}, onError: (String) -> Unit = {}) {
+        if (exoPlayer == null) {
+            Log.e(TAG, "Player not initialized")
+            onError("Player not initialized")
             return
         }
 
-        val player = getPlayer(context)
-        val mediaItem = MediaItem.fromUri(mediaUrl)
+        Log.d(TAG, "playMedia: $mediaUrl (current: $currentMediaUrl)")
 
-        if (!player.getMediaItems().contains(mediaItem) && player.mediaItemCount < MAX_PRELOADED_ITEMS) {
-            val mediaSource = buildMediaSource(mediaItem)
-            mainHandler.post { player.addMediaSource(mediaSource) }
-            Log.d(TAG, "Preloaded media: $mediaUrl")
-        } else {
-            Log.d(TAG, "Media already in queue or max preloaded items reached: $mediaUrl")
-        }
-    }
-
-    private fun buildMediaSource(mediaItem: MediaItem): MediaSource {
-        val dataSourceFactory = cacheDataSourceFactory ?: throw IllegalStateException("CacheDataSourceFactory not initialized")
-        return when {
-            mediaItem.localConfiguration?.uri.toString().endsWith(".m3u8") -> {
-                HlsMediaSource.Factory(dataSourceFactory)
-                    .setAllowChunklessPreparation(true)
-                    .createMediaSource(mediaItem)
-                    .also { Log.d(TAG, "HLS source created for: ${mediaItem.localConfiguration?.uri}") }
-            }
-            mediaItem.localConfiguration?.uri.toString().endsWith(".mpd") -> {
-                DashMediaSource.Factory(dataSourceFactory)
-                    .createMediaSource(mediaItem)
-                    .also { Log.d(TAG, "DASH source created for: ${mediaItem.localConfiguration?.uri}") }
-            }
-            else -> {
-                ProgressiveMediaSource.Factory(dataSourceFactory)
-                    .createMediaSource(mediaItem)
-                    .also { Log.d(TAG, "Progressive source created for: ${mediaItem.localConfiguration?.uri}") }
-            }
-        }
-    }
-
-    @Synchronized
-    fun pausePlayer() {
-        mainHandler.post { exoPlayer?.playWhenReady = false }
-        Log.d(TAG, "Player paused")
-    }
-
-    @Synchronized
-    fun resumePlayer() {
-        mainHandler.post { exoPlayer?.playWhenReady = true }
-        Log.d(TAG, "Player resumed")
-    }
-
-    @Synchronized
-    fun resetPlayer() {
         mainHandler.post {
+            try {
+                if (mediaUrl == currentMediaUrl && exoPlayer?.playbackState == Player.STATE_READY) {
+                    Log.d(TAG, "Same media, resuming")
+                    exoPlayer?.play()
+                    onReady()
+                    return@post
+                }
+
+                exoPlayer?.apply {
+                    stop()
+                    clearMediaItems()
+                }
+
+                mainHandler.postDelayed({
+                    try {
+                        val mediaItem = MediaItem.fromUri(mediaUrl)
+                        exoPlayer?.apply {
+                            setMediaItem(mediaItem)
+                            prepare()
+
+                            val readyListener = object : Player.Listener {
+                                override fun onPlaybackStateChanged(state: Int) {
+                                    if (state == Player.STATE_READY) {
+                                        removeListener(this)
+                                        play()
+                                        onReady()
+                                        Log.d(TAG, "Media ready and playing: $mediaUrl")
+                                    }
+                                }
+
+                                override fun onPlayerError(error: PlaybackException) {
+                                    removeListener(this)
+                                    onError("Playback error: ${error.message}")
+                                }
+                            }
+
+                            addListener(readyListener)
+                        }
+
+                        currentMediaUrl = mediaUrl
+
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error in delayed setup: ${e.message}")
+                        onError("Setup error: ${e.message}")
+                    }
+                }, 300)
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in playMedia: ${e.message}")
+                onError("Play error: ${e.message}")
+            }
+        }
+    }
+
+    fun pausePlayer() {
+        mainHandler.post {
+            exoPlayer?.pause()
+            Log.d(TAG, "Player paused")
+        }
+    }
+
+    fun getPlayer(): ExoPlayer? = exoPlayer
+
+    fun getCurrentProgress(): Float {
+        return exoPlayer?.let { player ->
+            val duration = player.duration
+            val position = player.currentPosition
+            if (duration > 0) position.toFloat() / duration else 0f
+        } ?: 0f
+    }
+
+    fun release() {
+        mainHandler.post {
+            // إيقاف التشغيل أولاً لضمان توقف الصوت
             exoPlayer?.stop()
             exoPlayer?.clearMediaItems()
-            currentMediaItem = null
-            Log.d(TAG, "Player reset: media items cleared")
-        }
-    }
+            Log.d(TAG, "Player stopped and media items cleared")
 
-    @Synchronized
-    fun releasePlayer() {
-        mainHandler.post {
+            // تحرير ExoPlayer
             exoPlayer?.release()
             exoPlayer = null
-        }
-        currentMediaItem = null
-        simpleCache?.release()
-        simpleCache = null
-        cacheDataSourceFactory = null
-        Log.d(TAG, "Player released and cache cleared")
-    }
+            currentMediaUrl = null
 
-    @Synchronized
-    fun clearExcessMediaItems(context: Context) {
-        exoPlayer?.let { player ->
-            val currentIndex = player.currentMediaItemIndex
-            val mediaItems = player.getMediaItems()
-            val itemsToRemove = mutableListOf<Int>()
+            // تحرير ذاكرة التخزين المؤقت
+            simpleCache?.release()
+            simpleCache = null
+            cacheDataSourceFactory = null
 
-            // Keep only the current and next item
-            for (i in mediaItems.indices) {
-                if (i != currentIndex && i != currentIndex + 1) {
-                    itemsToRemove.add(i)
-                }
-            }
-            mainHandler.post {
-                itemsToRemove.forEach { player.removeMediaItem(it) }
-            }
-            Log.d(TAG, "Removed ${itemsToRemove.size} excess media items")
+            isInitialized.set(false)
+            Log.d(TAG, "Player and cache fully released")
         }
     }
-
-    private fun Player.getMediaItems(): List<MediaItem> {
-        return (0 until mediaItemCount).map { getMediaItemAt(it) }
-    }
-
-    fun isCurrentlyPlaying(mediaUrl: String): Boolean {
-        return exoPlayer?.currentMediaItem?.localConfiguration?.uri.toString() == mediaUrl
-    }
-
 }
-
-
-
-

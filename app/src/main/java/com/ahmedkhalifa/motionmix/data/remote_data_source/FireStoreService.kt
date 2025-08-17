@@ -9,8 +9,10 @@ import com.ahmedkhalifa.motionmix.data.model.Comment
 import com.ahmedkhalifa.motionmix.data.model.Reel
 import com.ahmedkhalifa.motionmix.data.model.User
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.storage.FirebaseStorage
@@ -61,32 +63,79 @@ class FireStoreService @Inject constructor(
             Result.failure(e)
         }
     }
-
-
-
-    suspend fun getReels(): List<Reel> {
+    // Use pagination for better performance
+    // In FireStoreService
+// في FireStoreService - أضف logging مفصل
+    suspend fun getReelsPaginated(limit: Long = 10, lastDocument: DocumentSnapshot? = null): Pair<List<Reel>, DocumentSnapshot?> {
         return try {
-            val snapshot = reelsCollection.get().await()
-            Log.d("ReelsRepo", "Snapshot size: ${snapshot.documents.size}")
-            snapshot.documents.mapNotNull { doc ->
+            Log.d("FireStoreService", "Getting reels with limit: $limit")
+
+            var query = reelsCollection
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(limit)
+
+            lastDocument?.let {
+                query = query.startAfter(it)
+                Log.d("FireStoreService", "Starting after document: ${it.id}")
+            }
+
+            Log.d("FireStoreService", "Executing query...")
+            val snapshot = query.get().await()
+            Log.d("FireStoreService", "Query result: ${snapshot.documents.size} documents found")
+
+            // طباعة تفاصيل كل document
+            snapshot.documents.forEachIndexed { index, doc ->
+                Log.d("FireStoreService", "Document $index: ${doc.id}, exists: ${doc.exists()}")
+                if (doc.exists()) {
+                    Log.d("FireStoreService", "Document data: ${doc.data}")
+                }
+            }
+
+            val reels = snapshot.documents.mapNotNull { doc ->
                 try {
-                    val reel = doc.toObject<Reel>()
-                    if (reel == null) {
-                        Log.e("ReelsRepo", "toObject failed for doc ID: ${doc.id}")
+                    if (doc.exists()) {
+                        val reel = doc.toObject<Reel>()
+                        Log.d("FireStoreService", "Converted reel: ${reel?.id} - ${reel?.mediaUrl}")
+                        reel
+                    } else {
+                        Log.w("FireStoreService", "Document ${doc.id} doesn't exist")
+                        null
                     }
-                    reel?.copy(
-                        comments = getComments(reel.id)
-                    )
                 } catch (e: Exception) {
-                    Log.e("ReelsRepo", "Error in map for doc ${doc.id}", e)
+                    Log.e("FireStoreService", "Error converting document ${doc.id}: ${e.message}", e)
                     null
                 }
             }
+
+            val lastDoc = snapshot.documents.lastOrNull()
+            Log.d("FireStoreService", "Returning ${reels.size} reels, lastDoc: ${lastDoc?.id}")
+
+            Pair(reels, lastDoc)
         } catch (e: Exception) {
-            Log.e("ReelsRepo", "Error fetching reels", e)
-            emptyList()
+            Log.e("FireStoreService", "Error getting reels: ${e.message}", e)
+            Pair(emptyList(), null)
         }
-    }
+    }// Index only essential fields for faster queries
+// Add compound index: timestamp (descending), isActive (ascending)
+
+
+//    suspend fun getReels(): List<Reel> {
+//        return try {
+//            val snapshot = reelsCollection.get().await()
+//            snapshot.documents.mapNotNull { doc ->
+//                try {
+//                    val reel = doc.toObject<Reel>()
+//                    reel?.copy(
+//                        comments = getComments(reel.id)
+//                    )
+//                } catch (e: Exception) {
+//                    null
+//                }
+//            }
+//        } catch (e: Exception) {
+//            emptyList()
+//        }
+//    }
 
     suspend fun toggleLike(reelId: String, userId: String, isLiked: Boolean): Reel? {
         val reelRef = reelsCollection.document(reelId)

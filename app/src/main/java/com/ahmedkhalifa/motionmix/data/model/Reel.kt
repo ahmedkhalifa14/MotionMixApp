@@ -14,8 +14,9 @@ data class Reel(
     val sharesCount: Int = 0,
     val isLiked: Boolean = false,
     val likedUserIds: List<String> = emptyList(),
-    val comments: List<Comment> = emptyList()
-    // Add defaults for any other properties
+    val comments: List<Comment> = emptyList(),
+    val isActive: Boolean = true,
+    val timestamp: Long = System.currentTimeMillis(),
 )
 @Parcelize
 data class Comment(

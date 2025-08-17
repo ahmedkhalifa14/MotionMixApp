@@ -49,12 +49,12 @@ fun VideoPlayerView(
     thumbnailUrl: String,
     isLoading: MutableState<Boolean>,
     errorMessage: MutableState<String?>,
+    onErrorClick: () -> Unit, // Add onErrorClick parameter
     modifier: Modifier = Modifier,
     onDoubleTap: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
-    val retryCount = remember { mutableIntStateOf(0) }
     val loadingProgress = remember { mutableStateOf(0f) }
     val TAG = "VideoPlayerView"
     val mainHandler = remember { Handler(Looper.getMainLooper()) }
@@ -181,9 +181,7 @@ fun VideoPlayerView(
                     .clickable {
                         errorMessage.value = null
                         isLoading.value = true
-                        retryCount.intValue = 0
-                        player.seekTo(0)
-                        player.playWhenReady = true
+                        onErrorClick() // Use onErrorClick for retry
                         Log.d(TAG, "User tapped to retry")
                     },
                 horizontalAlignment = Alignment.CenterHorizontally

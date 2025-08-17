@@ -114,4 +114,6 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.7.0")
     implementation("androidx.compose.runtime:runtime:1.7.0")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+
+    implementation ("androidx.compose.foundation:foundation:1.5.0")
 }
