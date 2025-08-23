@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import androidx.media3.exoplayer.ExoPlayer
+import com.ahmedkhalifa.motionmix.common.utils.BottomSheetState
+import com.ahmedkhalifa.motionmix.common.utils.ReelState
 import com.google.firebase.firestore.DocumentSnapshot
 import java.util.UUID
 import javax.inject.Inject
@@ -37,14 +39,19 @@ class ReelViewModel @Inject constructor(
     private val _addCommentState = MutableStateFlow<Event<Resource<Boolean>>>(Event(Resource.Init()))
     val addCommentState: StateFlow<Event<Resource<Boolean>>> = _addCommentState.asStateFlow()
 
-    private val _incrementSharesState = MutableStateFlow<Event<Resource<Boolean>>>(Event(Resource.Init()))
-    val incrementSharesState: StateFlow<Event<Resource<Boolean>>> = _incrementSharesState.asStateFlow()
-
     private val _isMuted = MutableStateFlow(false)
     val isMuted: StateFlow<Boolean> = _isMuted.asStateFlow()
 
     private val _isLoadingMore = MutableStateFlow(false)
     val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
+
+    // Hoisted state for individual video players
+    private val _videoStates = MutableStateFlow<Map<String, ReelState>>(emptyMap())
+    val videoStates: StateFlow<Map<String, ReelState>> = _videoStates.asStateFlow()
+
+    // Hoisted state for bottom sheet
+    private val _bottomSheetState = MutableStateFlow<BottomSheetState>(BottomSheetState())
+    val bottomSheetState: StateFlow<BottomSheetState> = _bottomSheetState.asStateFlow()
 
     private var lastDocument: DocumentSnapshot? = null
     private var hasMoreData = true
@@ -59,51 +66,44 @@ class ReelViewModel @Inject constructor(
                 lastDocument = null
                 hasMoreData = true
 
-                Log.d("ReelViewModel", "Calling reelActionsRepo.getReelsPaginated...")
                 val getReelsResult = reelActionsRepo.getReelsPaginated(
                     limit = pageSize,
                     lastDocument = null
                 )
 
-                Log.d("ReelViewModel", "Repository result type: ${getReelsResult::class.simpleName}")
-
                 when (getReelsResult) {
                     is Resource.Success -> {
-                        Log.d("ReelViewModel", "Resource.Success received")
                         val (reels, newLastDoc) = getReelsResult.data ?: Pair(emptyList<Reel>(), null)
-                        Log.d("ReelViewModel", "Data extracted: ${reels.size} reels")
-
                         val currentUserId = firebaseAuth.currentUser?.uid ?: ""
-                        Log.d("ReelViewModel", "Current user ID: $currentUserId")
 
                         val updatedReels = reels.map { reel ->
-                            Log.d("ReelViewModel", "Processing reel: ${reel.id}")
                             reel.copy(isLiked = currentUserId in reel.likedUserIds)
                         }
 
-                        Log.d("ReelViewModel", "Setting ${updatedReels.size} reels to state")
                         _reelsState.value = updatedReels
                         lastDocument = newLastDoc
                         hasMoreData = reels.size >= pageSize
 
+                        // Initialize video states for new reels
+                        _videoStates.value = updatedReels.associate { reel ->
+                            reel.id to ReelState()
+                        }
+
                         _getReelsState.emit(Event(Resource.Success(updatedReels)))
-                        Log.d("ReelViewModel", "Successfully emitted success state")
                     }
                     is Resource.Error -> {
-                        Log.e("ReelViewModel", "Resource.Error: ${getReelsResult.message}")
                         _getReelsState.emit(Event(Resource.Error(getReelsResult.message ?: "Unknown error")))
                     }
                     else -> {
-                        Log.e("ReelViewModel", "Unexpected result type: ${getReelsResult::class.simpleName}")
                         _getReelsState.emit(Event(Resource.Error("Unexpected result")))
                     }
                 }
             } catch (e: Exception) {
-                Log.e("ReelViewModel", "Exception in getReels: ${e.message}", e)
                 _getReelsState.emit(Event(Resource.Error(e.message ?: "Unknown error")))
             }
         }
     }
+
     fun loadMoreReels() {
         if (!hasMoreData || _isLoadingMore.value) return
 
@@ -127,6 +127,12 @@ class ReelViewModel @Inject constructor(
                         _reelsState.value = _reelsState.value + updatedNewReels
                         lastDocument = newLastDoc
                         hasMoreData = newReels.size >= pageSize
+
+                        // Add video states for new reels
+                        val newVideoStates = updatedNewReels.associate { reel ->
+                            reel.id to ReelState()
+                        }
+                        _videoStates.value = _videoStates.value + newVideoStates
                     }
                     is Resource.Error -> {
                         Log.e("ReelViewModel", "Failed to load more reels: ${getReelsResult.message}")
@@ -146,10 +152,6 @@ class ReelViewModel @Inject constructor(
         if (currentIndex >= totalItems - 3 && hasMoreData && !_isLoadingMore.value) {
             loadMoreReels()
         }
-    }
-
-    fun refreshReels() {
-        getReels()
     }
 
     fun toggleLike(reelId: String) {
@@ -222,25 +224,48 @@ class ReelViewModel @Inject constructor(
         }
     }
 
-//    fun incrementShares(reelId: String) {
-//        viewModelScope.launch {
-//            _incrementSharesState.emit(Event(Resource.Loading()))
-//            try {
-//                val result = reelActionsRepo.incrementShares(reelId)
-//                if (result is Resource.Success && result.data == true) {
-//                    _reelsState.value = _reelsState.value.map { reel ->
-//                        if (reel.id == reelId) {
-//                            reel.copy(sharesCount = reel.sharesCount + 1)
-//                        } else {
-//                            reel
-//                        }
-//                    }
-//                }
-//                _incrementSharesState.emit(Event(result))
-//            } catch (e: Exception) {
-//                _incrementSharesState.emit(Event(Resource.Error(e.message.toString())))
-//            }
-//        }
-//    }
+    // State hoisting methods for video states
+    fun updateVideoState(reelId: String, update: (ReelState) -> ReelState) {
+        viewModelScope.launch {
+            val currentStates = _videoStates.value.toMutableMap()
+            val currentState = currentStates[reelId] ?: ReelState()
+            currentStates[reelId] = update(currentState)
+            _videoStates.value = currentStates
+        }
+    }
 
+    fun updateProgress(reelId: String, progress: Float) {
+        updateVideoState(reelId) { it.copy(progress = progress) }
+    }
+
+    fun setLoading(reelId: String, isLoading: Boolean) {
+        updateVideoState(reelId) { it.copy(isLoading = isLoading) }
+    }
+
+    fun setError(reelId: String, errorMessage: String?) {
+        updateVideoState(reelId) { it.copy(errorMessage = errorMessage) }
+    }
+
+    fun setPlaying(reelId: String, isPlaying: Boolean) {
+        updateVideoState(reelId) { it.copy(isPlaying = isPlaying) }
+    }
+
+    // State hoisting methods for bottom sheet
+    fun showBottomSheet(reelId: String) {
+        viewModelScope.launch {
+            _bottomSheetState.value = BottomSheetState(
+                isVisible = true,
+                selectedReelId = reelId
+            )
+        }
+    }
+
+    fun hideBottomSheet() {
+        viewModelScope.launch {
+            _bottomSheetState.value = BottomSheetState(
+                isVisible = false,
+                selectedReelId = null
+            )
+        }
+    }
 }

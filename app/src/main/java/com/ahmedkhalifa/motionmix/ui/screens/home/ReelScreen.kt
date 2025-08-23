@@ -1,7 +1,7 @@
 package com.ahmedkhalifa.motionmix.ui.screens.home
 
+import android.content.Context
 import android.content.Intent
-import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,10 +59,12 @@ import android.view.ViewGroup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.media3.exoplayer.ExoPlayer
 
 @UnstableApi
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -73,22 +75,23 @@ fun ReelsScreen(
 ) {
     val reelsState by reelViewModel.reelsState.collectAsStateWithLifecycle(initialValue = emptyList())
     val getReelsState by reelViewModel.getReelsState.collectAsStateWithLifecycle(
-        initialValue = Event(
-            Resource.Init()
-        )
+        initialValue = Event(Resource.Init())
     )
+    val videoStates by reelViewModel.videoStates.collectAsStateWithLifecycle()
+    val bottomSheetState by reelViewModel.bottomSheetState.collectAsStateWithLifecycle()
+    val isMuted by reelViewModel.isMuted.collectAsStateWithLifecycle()
+
     val playerManager = ExoPlayerManager.getInstance()
 
     LaunchedEffect(Unit) {
         reelViewModel.getReels()
     }
 
-    // Monitor activity lifeCycle
+    // Monitor activity lifecycle
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
-                Log.d("ReelsScreen", "Lifecycle: $event - Stopping and releasing player")
                 playerManager.pausePlayer()
                 playerManager.release()
             }
@@ -96,7 +99,6 @@ fun ReelsScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            Log.d("ReelsScreen", "Lifecycle observer removed")
         }
     }
 
@@ -121,10 +123,7 @@ fun ReelsScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
-                        onClick = {
-                            Log.d("ReelsScreen", "🔄 Retry clicked")
-                            reelViewModel.getReels()
-                        },
+                        onClick = { reelViewModel.getReels() },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
                     ) {
                         Text("Retry", color = Color.White)
@@ -135,7 +134,6 @@ fun ReelsScreen(
 
         else -> {
             if (reelsState.isEmpty()) {
-                Log.d("ReelsScreen", "📭 No reels available")
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -148,10 +146,7 @@ fun ReelsScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
-                            onClick = {
-                                Log.d("ReelsScreen", "🔄 Refresh clicked")
-                                reelViewModel.getReels()
-                            },
+                            onClick = { reelViewModel.getReels() },
                             colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)
                         ) {
                             Text("Refresh", color = Color.White)
@@ -159,12 +154,10 @@ fun ReelsScreen(
                     }
                 }
             } else {
-                Log.d("ReelsScreen", "🎬 Showing ${reelsState.size} reels")
                 val pagerState = rememberPagerState(pageCount = { reelsState.size })
                 val currentPlayingIndex by remember { derivedStateOf { pagerState.currentPage } }
 
                 LaunchedEffect(pagerState.currentPage) {
-                    Log.d("ReelsScreen", "📄 Page changed to: ${pagerState.currentPage}")
                     reelViewModel.checkAndLoadMore(pagerState.currentPage)
                 }
 
@@ -175,15 +168,74 @@ fun ReelsScreen(
                 ) { page ->
                     val reel = reelsState[page]
                     val shouldPlay = page == currentPlayingIndex
-
-                    Log.d("ReelsScreen", "🎥 Page $page: ${reel.id}, shouldPlay: $shouldPlay")
+                    val videoState = videoStates[reel.id] ?: ReelViewModel.VideoState()
 
                     VideoPlayerScreen(
                         reel = reel,
                         shouldPlay = shouldPlay,
-                        reelViewModel = reelViewModel,
-                        navController = navController
+                        videoState = videoState,
+                        isMuted = isMuted,
+                        onUpdateProgress = { progress ->
+                            reelViewModel.updateProgress(reel.id, progress)
+                        },
+                        onSetLoading = { isLoading ->
+                            reelViewModel.setLoading(reel.id, isLoading)
+                        },
+                        onSetError = { errorMessage ->
+                            reelViewModel.setError(reel.id, errorMessage)
+                        },
+                        onSetPlaying = { isPlaying ->
+                            reelViewModel.setPlaying(reel.id, isPlaying)
+                        },
+                        onToggleLike = {
+                            reelViewModel.toggleLike(reel.id)
+                        },
+                        onToggleMute = { player ->
+                            reelViewModel.toggleMute(player)
+                        },
+                        onCommentClick = {
+                            navController.navigate("comments/${reel.id}")
+                        },
+                        onShareClick = { context ->
+                            val shareIntent = Intent().apply {
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_TEXT, "Watch this video: ${reel.mediaUrl}")
+                                type = "text/plain"
+                            }
+                            context.startActivity(Intent.createChooser(shareIntent, "Share video"))
+                        },
+                        onMoreClick = {
+                            reelViewModel.showBottomSheet(reel.id)
+                        }
                     )
+                }
+
+                // Hoisted Bottom Sheet
+                if (bottomSheetState.isVisible && bottomSheetState.selectedReelId != null) {
+                    val selectedReel = reelsState.find { it.id == bottomSheetState.selectedReelId }
+                    selectedReel?.let { reel ->
+                        ReelBottomSheet(
+                            reel = reel,
+                            onDismiss = { reelViewModel.hideBottomSheet() },
+                            onReport = {
+                                reelViewModel.hideBottomSheet()
+                                // Handle report action
+                            },
+                            onSave = {
+                                reelViewModel.hideBottomSheet()
+                                // Handle save action
+                            },
+                            onCopyLink = { context ->
+                                reelViewModel.hideBottomSheet()
+                                val copyIntent = Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    putExtra(Intent.EXTRA_TEXT, reel.mediaUrl)
+                                    type = "text/plain"
+                                }
+                                context.startActivity(Intent.createChooser(copyIntent, "Copy video link"))
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -191,28 +243,30 @@ fun ReelsScreen(
 
     DisposableEffect(Unit) {
         onDispose {
-            Log.d("ReelsScreen", "🧹 Cleaning up ReelsScreen")
             playerManager.release()
         }
     }
 }
 
+// Updated VideoPlayerScreen with hoisted state
 @UnstableApi
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VideoPlayerScreen(
     reel: Reel,
     shouldPlay: Boolean,
-    reelViewModel: ReelViewModel,
-    navController: NavController
+    videoState: ReelViewModel.VideoState,
+    isMuted: Boolean,
+    onUpdateProgress: (Float) -> Unit,
+    onSetLoading: (Boolean) -> Unit,
+    onSetError: (String?) -> Unit,
+    onSetPlaying: (Boolean) -> Unit,
+    onToggleLike: () -> Unit,
+    onToggleMute: (player: ExoPlayer) -> Unit,
+    onCommentClick: () -> Unit,
+    onShareClick: (context: Context) -> Unit,
+    onMoreClick: () -> Unit,
 ) {
     val context = LocalContext.current
-    val progress = remember { mutableFloatStateOf(0f) }
-    val isLoading = remember { mutableStateOf(true) }
-    val errorMessage = remember { mutableStateOf<String?>(null) }
-    val showBottomSheet = remember { mutableStateOf(false) }
-    val isMuted by reelViewModel.isMuted.collectAsStateWithLifecycle()
-
     val playerManager = ExoPlayerManager.getInstance()
     val player = playerManager.initializePlayer(context)
 
@@ -230,32 +284,35 @@ fun VideoPlayerScreen(
 
     // Reset states when reel changes
     LaunchedEffect(reel.id) {
-        isLoading.value = true
-        errorMessage.value = null
-        progress.floatValue = 0f
+        onSetLoading(true)
+        onSetError(null)
+        onUpdateProgress(0f)
     }
 
     // Play control
     LaunchedEffect(shouldPlay, reel.mediaUrl) {
         if (shouldPlay) {
-            isLoading.value = true
-            errorMessage.value = null
-            delay(100) // small delay to ensure PlayerView initialization
-            playerView.player = player // attach ExoPlayer to PlayerView
+            onSetLoading(true)
+            onSetError(null)
+            delay(100)
+            playerView.player = player
             playerManager.playMedia(
                 mediaUrl = reel.mediaUrl,
                 onReady = {
-                    isLoading.value = false
-                    errorMessage.value = null
+                    onSetLoading(false)
+                    onSetError(null)
+                    onSetPlaying(true)
                 },
                 onError = { error ->
-                    errorMessage.value = "Failed to load video. Tap to try again."
-                    isLoading.value = false
+                    onSetError("Failed to load video. Tap to try again.")
+                    onSetLoading(false)
+                    onSetPlaying(false)
                 }
             )
         } else {
             playerManager.pausePlayer()
-            playerView.player = null // detach PlayerView when not playing
+            playerView.player = null
+            onSetPlaying(false)
         }
     }
 
@@ -269,7 +326,7 @@ fun VideoPlayerScreen(
         if (shouldPlay) {
             while (true) {
                 try {
-                    progress.floatValue = playerManager.getCurrentProgress()
+                    onUpdateProgress(playerManager.getCurrentProgress())
                 } catch (e: Exception) {
                     e.message
                 }
@@ -293,7 +350,7 @@ fun VideoPlayerScreen(
         )
 
         // Show thumbnail while loading
-        if (isLoading.value && reel.thumbnailUrl.isNotEmpty()) {
+        if (videoState.isLoading && reel.thumbnailUrl.isNotEmpty()) {
             AsyncImage(
                 model = reel.thumbnailUrl,
                 contentDescription = "Video thumbnail",
@@ -303,7 +360,7 @@ fun VideoPlayerScreen(
         }
 
         // Loading indicator
-        if (isLoading.value) {
+        if (videoState.isLoading && !videoState.isPlaying) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -318,7 +375,7 @@ fun VideoPlayerScreen(
         }
 
         // Show error message
-        errorMessage.value?.let { message ->
+        videoState.errorMessage?.let { message ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -330,9 +387,7 @@ fun VideoPlayerScreen(
                         .padding(16.dp)
                         .clip(RoundedCornerShape(12.dp)),
                     colors = androidx.compose.material3.CardDefaults.cardColors(
-                        containerColor = Color.White.copy(
-                            alpha = 0.9f
-                        )
+                        containerColor = Color.White.copy(alpha = 0.9f)
                     )
                 ) {
                     Column(
@@ -347,18 +402,19 @@ fun VideoPlayerScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         Button(
                             onClick = {
-                                isLoading.value = true
-                                errorMessage.value = null
+                                onSetLoading(true)
+                                onSetError(null)
                                 playerManager.playMedia(
                                     mediaUrl = reel.mediaUrl,
                                     onReady = {
-                                        isLoading.value = false
-                                        errorMessage.value = null
+                                        onSetLoading(false)
+                                        onSetError(null)
+                                        onSetPlaying(true)
                                     },
                                     onError = { error ->
-                                        errorMessage.value =
-                                            "Failed to load video. Tap to try again."
-                                        isLoading.value = false
+                                        onSetError("Failed to load video. Tap to try again.")
+                                        onSetLoading(false)
+                                        onSetPlaying(false)
                                     }
                                 )
                             },
@@ -375,32 +431,17 @@ fun VideoPlayerScreen(
             reel = reel,
             isMuted = isMuted,
             player = player,
-            isLoading = isLoading.value,
-            onToggleLike = {
-                reelViewModel.toggleLike(reel.id)
-            },
-            onToggleMute = {
-                reelViewModel.toggleMute(player)
-            },
-            onCommentClick = {
-                navController.navigate("comments/${reel.id}")
-            },
-            onShareClick = {
-                val shareIntent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    putExtra(Intent.EXTRA_TEXT, "Watch this video: ${reel.mediaUrl}")
-                    type = "text/plain"
-                }
-                context.startActivity(Intent.createChooser(shareIntent, "Share video"))
-            },
-            onMoreClick = {
-                showBottomSheet.value = true
-            }
+            isLoading = videoState.isLoading,
+            onToggleLike = onToggleLike,
+            onToggleMute = { onToggleMute(player) },
+            onCommentClick = onCommentClick,
+            onShareClick = { onShareClick(context) },
+            onMoreClick = onMoreClick
         )
 
         // Progress bar
         LinearProgressIndicator(
-            progress = { progress.floatValue },
+            progress = { videoState.progress },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(4.dp)
@@ -408,67 +449,57 @@ fun VideoPlayerScreen(
             color = Color.White,
             trackColor = Color.Gray.copy(alpha = 0.5f)
         )
-
-        if (showBottomSheet.value) {
-            ModalBottomSheet(
-                onDismissRequest = { showBottomSheet.value = false },
-                sheetState = rememberModalBottomSheetState()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "More options",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    TextButton(onClick = {
-                        showBottomSheet.value = false
-                    }) {
-                        Text("Report", fontSize = 16.sp, color = Color.Red)
-                    }
-                    TextButton(onClick = {
-                        showBottomSheet.value = false
-                    }) {
-                        Text("Save", fontSize = 16.sp)
-                    }
-                    TextButton(onClick = {
-                        showBottomSheet.value = false
-                        val copyIntent = Intent().apply {
-                            action = Intent.ACTION_SEND
-                            putExtra(Intent.EXTRA_TEXT, reel.mediaUrl)
-                            type = "text/plain"
-                        }
-                        context.startActivity(Intent.createChooser(copyIntent, "Copy video link"))
-                    }) {
-                        Text("Copy link", fontSize = 16.sp)
-                    }
-                    TextButton(onClick = {
-                        showBottomSheet.value = false
-                    }) {
-                        Text("Cancel", fontSize = 16.sp)
-                    }
-                }
-            }
-        }
     }
 
     // Clean PlayerView on exit
     DisposableEffect(reel.id) {
         onDispose {
             playerView.player = null
-            playerManager.pausePlayer() // stop playback when leaving page
+            playerManager.pausePlayer()
         }
     }
 }
 
-@androidx.annotation.OptIn(UnstableApi::class)
-@Preview(showBackground = true)
+// Extracted Bottom Sheet Component
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PreviewReelsScreen() {
-    ReelsScreen(rememberNavController())
+fun ReelBottomSheet(
+    reel: Reel,
+    onDismiss: () -> Unit,
+    onReport: () -> Unit,
+    onSave: () -> Unit,
+    onCopyLink: (Context) -> Unit
+) {
+    val context = LocalContext.current
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "More options",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            TextButton(onClick = onReport) {
+                Text("Report", fontSize = 16.sp, color = Color.Red)
+            }
+            TextButton(onClick = onSave) {
+                Text("Save", fontSize = 16.sp)
+            }
+            TextButton(onClick = { onCopyLink(context) }) {
+                Text("Copy link", fontSize = 16.sp)
+            }
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", fontSize = 16.sp)
+            }
+        }
+    }
 }
