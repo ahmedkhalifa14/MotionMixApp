@@ -83,6 +83,11 @@
     <string name="gallery">Gallery</string>
     <string name="camera">Camera</string>
     <string name="profile_picture">Profile Picture</string>
+    <string name="failed_to_load_video_tap_to_try_again">Failed to load video. Tap to try again.</string>
+    <string name="there_are_no_comments_yet_be_the_first_to_comment">There are no comments yet.\n Be the first to comment!</string>
+    <string name="write_your_comment">Write your comment...</string>
+    <string name="close">Close</string>
+    <string name="comments">comments (%1$s)</string>
 </resources>
 
 

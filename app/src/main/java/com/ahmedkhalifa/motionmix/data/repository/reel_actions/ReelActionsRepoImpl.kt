@@ -40,17 +40,37 @@ class ReelActionsRepoImpl @Inject constructor(
             }
         }
 
-
-    override suspend fun addComment(
-        reelId: String,
-        comment: Comment
-    ): Resource<Boolean> =
+    override suspend fun addComment(reelId: String, comment: Comment): Resource<Boolean> =
         withContext(Dispatchers.IO) {
-            tryCatch {
-                val addCommentResult =
-                    fireStoreService.addComment(reelId = reelId, comment = comment)
-                Resource.Success(addCommentResult)
+            try {
+                Log.d("ReelRepo", "🟡 Calling fireStoreService.addComment...")
+                Log.d("ReelRepo", "🟡 Reel ID: $reelId, Comment: $comment")
+
+                val addCommentResult = fireStoreService.addComment(reelId = reelId, comment = comment)
+
+                Log.d("ReelRepo", "🟡 fireStoreService result: $addCommentResult")
+
+                if (addCommentResult) {
+                    Log.d("ReelRepo", "✅ Comment added successfully to Firebase")
+                    Resource.Success(true)
+                } else {
+                    Log.e("ReelRepo", "🔴 fireStoreService returned false - comment not added")
+                    Resource.Error("Failed to add comment to Firebase")
+                }
+
+            } catch (e: Exception) {
+                Log.e("ReelRepo", "❌ Exception in addComment: ${e.message}", e)
+                Resource.Error(e.message ?: "Unknown error")
             }
         }
+
+
+    override suspend fun getCommentsForReel(reelId: String): List<Comment> {
+        return try {
+            fireStoreService.getCommentsForReel(reelId)
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
 }
 

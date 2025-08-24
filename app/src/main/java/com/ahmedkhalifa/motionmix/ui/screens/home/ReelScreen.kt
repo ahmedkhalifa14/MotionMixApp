@@ -2,8 +2,9 @@ package com.ahmedkhalifa.motionmix.ui.screens.home
 
 import android.content.Context
 import android.content.Intent
+import android.view.ViewGroup
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -11,17 +12,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -29,42 +29,38 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
+import com.ahmedkhalifa.motionmix.R
 import com.ahmedkhalifa.motionmix.common.ExoPlayerManager
 import com.ahmedkhalifa.motionmix.common.utils.Event
+import com.ahmedkhalifa.motionmix.common.utils.ReelState
 import com.ahmedkhalifa.motionmix.common.utils.Resource
 import com.ahmedkhalifa.motionmix.data.model.Reel
+import com.ahmedkhalifa.motionmix.ui.composable.CommentsBottomSheet
+import com.ahmedkhalifa.motionmix.ui.composable.ReelBottomSheet
 import com.ahmedkhalifa.motionmix.ui.composable.VideoOverlay
-import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
-import android.view.ViewGroup
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.media3.exoplayer.ExoPlayer
 
 @UnstableApi
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -82,6 +78,10 @@ fun ReelsScreen(
     val isMuted by reelViewModel.isMuted.collectAsStateWithLifecycle()
 
     val playerManager = ExoPlayerManager.getInstance()
+
+    // States for comments bottom sheet
+    var showCommentsSheet by remember { mutableStateOf(false) }
+    var selectedReelForComments by remember { mutableStateOf<Reel?>(null) }
 
     LaunchedEffect(Unit) {
         reelViewModel.getReels()
@@ -168,7 +168,7 @@ fun ReelsScreen(
                 ) { page ->
                     val reel = reelsState[page]
                     val shouldPlay = page == currentPlayingIndex
-                    val videoState = videoStates[reel.id] ?: ReelViewModel.VideoState()
+                    val videoState = videoStates[reel.id] ?: ReelState()
 
                     VideoPlayerScreen(
                         reel = reel,
@@ -194,7 +194,8 @@ fun ReelsScreen(
                             reelViewModel.toggleMute(player)
                         },
                         onCommentClick = {
-                            navController.navigate("comments/${reel.id}")
+                            selectedReelForComments = reel
+                            showCommentsSheet = true
                         },
                         onShareClick = { context ->
                             val shareIntent = Intent().apply {
@@ -210,7 +211,7 @@ fun ReelsScreen(
                     )
                 }
 
-                // Hoisted Bottom Sheet
+                // Hoisted Bottom Sheet for options
                 if (bottomSheetState.isVisible && bottomSheetState.selectedReelId != null) {
                     val selectedReel = reelsState.find { it.id == bottomSheetState.selectedReelId }
                     selectedReel?.let { reel ->
@@ -219,11 +220,9 @@ fun ReelsScreen(
                             onDismiss = { reelViewModel.hideBottomSheet() },
                             onReport = {
                                 reelViewModel.hideBottomSheet()
-                                // Handle report action
                             },
                             onSave = {
                                 reelViewModel.hideBottomSheet()
-                                // Handle save action
                             },
                             onCopyLink = { context ->
                                 reelViewModel.hideBottomSheet()
@@ -237,6 +236,18 @@ fun ReelsScreen(
                         )
                     }
                 }
+
+                // Comments Bottom Sheet
+                if (showCommentsSheet && selectedReelForComments != null) {
+                    CommentsBottomSheet(
+                        reel = selectedReelForComments!!,
+                        onDismiss = {
+                            showCommentsSheet = false
+                            selectedReelForComments = null
+                        },
+                        reelViewModel = reelViewModel
+                    )
+                }
             }
         }
     }
@@ -248,13 +259,12 @@ fun ReelsScreen(
     }
 }
 
-// Updated VideoPlayerScreen with hoisted state
 @UnstableApi
 @Composable
 fun VideoPlayerScreen(
     reel: Reel,
     shouldPlay: Boolean,
-    videoState: ReelViewModel.VideoState,
+    videoState: ReelState,
     isMuted: Boolean,
     onUpdateProgress: (Float) -> Unit,
     onSetLoading: (Boolean) -> Unit,
@@ -304,7 +314,7 @@ fun VideoPlayerScreen(
                     onSetPlaying(true)
                 },
                 onError = { error ->
-                    onSetError("Failed to load video. Tap to try again.")
+                    onSetError(context.getString(R.string.failed_to_load_video_tap_to_try_again))
                     onSetLoading(false)
                     onSetPlaying(false)
                 }
@@ -412,7 +422,7 @@ fun VideoPlayerScreen(
                                         onSetPlaying(true)
                                     },
                                     onError = { error ->
-                                        onSetError("Failed to load video. Tap to try again.")
+                                        onSetError(context.getString(R.string.failed_to_load_video_tap_to_try_again))
                                         onSetLoading(false)
                                         onSetPlaying(false)
                                     }
@@ -456,50 +466,6 @@ fun VideoPlayerScreen(
         onDispose {
             playerView.player = null
             playerManager.pausePlayer()
-        }
-    }
-}
-
-// Extracted Bottom Sheet Component
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ReelBottomSheet(
-    reel: Reel,
-    onDismiss: () -> Unit,
-    onReport: () -> Unit,
-    onSave: () -> Unit,
-    onCopyLink: (Context) -> Unit
-) {
-    val context = LocalContext.current
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = "More options",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            TextButton(onClick = onReport) {
-                Text("Report", fontSize = 16.sp, color = Color.Red)
-            }
-            TextButton(onClick = onSave) {
-                Text("Save", fontSize = 16.sp)
-            }
-            TextButton(onClick = { onCopyLink(context) }) {
-                Text("Copy link", fontSize = 16.sp)
-            }
-            TextButton(onClick = onDismiss) {
-                Text("Cancel", fontSize = 16.sp)
-            }
         }
     }
 }

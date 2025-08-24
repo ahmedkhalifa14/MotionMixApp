@@ -1,6 +1,7 @@
 package com.ahmedkhalifa.motionmix.data.model
 
 import android.os.Parcelable
+import com.google.firebase.firestore.PropertyName
 import kotlinx.parcelize.Parcelize
 
 data class Reel(
@@ -20,12 +21,13 @@ data class Reel(
 )
 @Parcelize
 data class Comment(
-    val id: String, // Unique ID for the comment
-    val userId: String, // ID of the user who commented
-    val text: String,
-    val timestamp: Long
-) : Parcelable
-
+    @PropertyName("id") val id: String = "", // Unique ID for the comment
+    @PropertyName("userId") val userId: String = "", // ID of the user who commented
+    @PropertyName("text") val text: String = "",
+    @PropertyName("timestamp") val timestamp: Long = 0L
+) : Parcelable {
+    constructor() : this("", "", "", 0L)
+}
 
 fun getSampleVideos(): List<Reel> {
     return listOf(

@@ -83,20 +83,16 @@ class FireStoreService @Inject constructor(
             val snapshot = query.get().await()
             Log.d("FireStoreService", "Query result: ${snapshot.documents.size} documents found")
 
-            // طباعة تفاصيل كل document
-            snapshot.documents.forEachIndexed { index, doc ->
-                Log.d("FireStoreService", "Document $index: ${doc.id}, exists: ${doc.exists()}")
-                if (doc.exists()) {
-                    Log.d("FireStoreService", "Document data: ${doc.data}")
-                }
-            }
-
+            // جيب التعليقات لكل reel باستخدام async
             val reels = snapshot.documents.mapNotNull { doc ->
                 try {
                     if (doc.exists()) {
                         val reel = doc.toObject<Reel>()
-                        Log.d("FireStoreService", "Converted reel: ${reel?.id} - ${reel?.mediaUrl}")
-                        reel
+                        reel?.let {
+                            // جيب التعليقات من الـ subcollection
+                            val comments = getCommentsForReel(it.id)
+                            it.copy(comments = comments, id = doc.id)
+                        }
                     } else {
                         Log.w("FireStoreService", "Document ${doc.id} doesn't exist")
                         null
@@ -115,8 +111,36 @@ class FireStoreService @Inject constructor(
             Log.e("FireStoreService", "Error getting reels: ${e.message}", e)
             Pair(emptyList(), null)
         }
-    }// Index only essential fields for faster queries
-// Add compound index: timestamp (descending), isActive (ascending)
+    }
+
+    // دالة جديدة علشان تجيب التعليقات من الـ subcollection
+     suspend fun getCommentsForReel(reelId: String): List<Comment> {
+        return try {
+            Log.d("FireStoreService", "Getting comments for reel: $reelId")
+
+            val snapshot = reelsCollection
+                .document(reelId)
+                .collection("comments")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .get()
+                .await()
+
+            val comments = snapshot.documents.mapNotNull { doc ->
+                try {
+                    doc.toObject<Comment>()?.copy(id = doc.id)
+                } catch (e: Exception) {
+                    Log.e("FireStoreService", "Error converting comment ${doc.id}: ${e.message}", e)
+                    null
+                }
+            }
+
+            Log.d("FireStoreService", "Found ${comments.size} comments for reel: $reelId")
+            comments
+        } catch (e: Exception) {
+            Log.e("FireStoreService", "Error getting comments for reel $reelId: ${e.message}", e)
+            emptyList()
+        }
+    }// Add compound index: timestamp (descending), isActive (ascending)
 
 
 //    suspend fun getReels(): List<Reel> {
@@ -166,41 +190,53 @@ class FireStoreService @Inject constructor(
             null
         }
     }
-
     suspend fun addComment(reelId: String, comment: Comment): Boolean {
         return try {
-            reelsCollection
+            Log.d("FireStoreService", "🟡 Starting addComment for reel: $reelId")
+            Log.d("FireStoreService", "🟡 Comment data: $comment")
+
+            // ١. تأكد إن الـ reel موجود أصلاً
+            val reelDoc = reelsCollection.document(reelId).get().await()
+            if (!reelDoc.exists()) {
+                Log.e("FireStoreService", "🔴 Reel doesn't exist: $reelId")
+                return false
+            }
+
+            Log.d("FireStoreService", "🟢 Reel exists, adding comment...")
+
+            // ٢. Add comment to subcollection
+            val commentRef = reelsCollection
                 .document(reelId)
                 .collection("comments")
                 .document(comment.id)
-                .set(comment)
-                .await()
-            reelsCollection
-                .document(reelId)
+
+            Log.d("FireStoreService", "🟡 Firestore path: ${commentRef.path}")
+
+            commentRef.set(comment).await()
+            Log.d("FireStoreService", "✅ Comment document set successfully")
+
+            // ٣. Update comments count in the reel document
+            reelsCollection.document(reelId)
                 .update("commentsCount", FieldValue.increment(1))
                 .await()
-            true
+
+            Log.d("FireStoreService", "✅ Comments count updated successfully")
+
+            // ٤. Verify that the comment was actually added
+            val addedComment = commentRef.get().await()
+            if (addedComment.exists()) {
+                Log.d("FireStoreService", "✅ Comment verified in Firestore")
+                true
+            } else {
+                Log.e("FireStoreService", "🔴 Comment not found after adding!")
+                false
+            }
+
         } catch (e: Exception) {
+            Log.e("FireStoreService", "🔴 Exception in addComment: ${e.message}", e)
             false
         }
     }
-
-    private suspend fun getComments(reelId: String): List<Comment> {
-        return try {
-            val snapshot = reelsCollection
-                .document(reelId)
-                .collection("comments")
-                .orderBy("timestamp")
-                .get()
-                .await()
-            snapshot.documents.mapNotNull { it.toObject<Comment>() }
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
-
-
 
     // USER ACCOUNT DATA
     suspend fun saveUserInfo(user: User, imageUri: Uri?, context: Context) {

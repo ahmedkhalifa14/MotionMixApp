@@ -189,42 +189,90 @@ class ReelViewModel @Inject constructor(
 
     fun addComment(reelId: String, commentText: String) {
         viewModelScope.launch {
+            Log.d("ReelViewModel", "Starting addComment for reel: $reelId")
+
             _addCommentState.emit(Event(Resource.Loading()))
+
+            var comment: Comment? = null
+
             try {
-                val currentUserId = firebaseAuth.currentUser?.uid ?: return@launch
-                val comment = Comment(
+                val currentUserId = firebaseAuth.currentUser?.uid
+                if (currentUserId == null) {
+                    _addCommentState.emit(Event(Resource.Error("User not authenticated")))
+                    return@launch
+                }
+
+                comment = Comment(
                     id = UUID.randomUUID().toString(),
                     userId = currentUserId,
                     text = commentText,
                     timestamp = System.currentTimeMillis()
                 )
 
+                Log.d("ReelViewModel", "Created comment: $comment")
+
+                // Add locally first
+                _reelsState.value = _reelsState.value.map { reel ->
+                    if (reel.id == reelId) {
+                        val newComments = reel.comments + comment
+                        val newCount = reel.commentsCount + 1
+                        Log.d("ReelViewModel", "Updated locally - comments: ${newComments.size}, count: $newCount")
+                        reel.copy(comments = newComments, commentsCount = newCount)
+                    } else {
+                        reel
+                    }
+                }
+
+                // Try to add to Firebase
+                Log.d("ReelViewModel", "Calling repo to add comment to Firebase")
                 val addCommentResult = reelActionsRepo.addComment(reelId, comment)
+                Log.d("ReelViewModel", "Repo result: $addCommentResult")
+
                 when (addCommentResult) {
                     is Resource.Success -> {
-                        if (addCommentResult.data == true) {
-                            _reelsState.value = _reelsState.value.map { reel ->
-                                if (reel.id == reelId) {
-                                    reel.copy(
-                                        comments = reel.comments + comment,
-                                        commentsCount = reel.commentsCount + 1
-                                    )
-                                } else {
-                                    reel
-                                }
-                            }
+                        val success = addCommentResult.data ?: false
+                        if (success) {
+                            Log.d("ReelViewModel", "Successfully added to Firebase")
+                            _addCommentState.emit(Event(Resource.Success(true)))
+                        } else {
+                            Log.e("ReelViewModel", "Firebase returned false")
+                            rollbackLocalComment(reelId, comment.id)
+                            _addCommentState.emit(Event(Resource.Error("Failed to add comment")))
                         }
                     }
-                    else -> {}
+                    is Resource.Error -> {
+                        Log.e("ReelViewModel", "Error from repo: ${addCommentResult.message}")
+                        rollbackLocalComment(reelId, comment.id)
+                        _addCommentState.emit(Event(Resource.Error(addCommentResult.message.toString())))
+                    }
+                    else -> {
+                        Log.e("ReelViewModel", "Unexpected result")
+                        rollbackLocalComment(reelId, comment.id)
+                        _addCommentState.emit(Event(Resource.Error("Unexpected result")))
+                    }
                 }
-                _addCommentState.emit(Event(addCommentResult))
             } catch (e: Exception) {
+                Log.e("ReelViewModel", "Exception: ${e.message}", e)
+                if (comment != null) {
+                    rollbackLocalComment(reelId, comment.id)
+                }
                 _addCommentState.emit(Event(Resource.Error(e.message.toString())))
             }
         }
     }
 
-    // State hoisting methods for video states
+    private fun rollbackLocalComment(reelId: String, commentId: String) {
+        _reelsState.value = _reelsState.value.map { reel ->
+            if (reel.id == reelId) {
+                val filteredComments = reel.comments.filter { it.id != commentId }
+                val newCount = (reel.commentsCount - 1).coerceAtLeast(0)
+                Log.d("ReelViewModel", "Rollback - comments: ${filteredComments.size}, count: $newCount")
+                reel.copy(comments = filteredComments, commentsCount = newCount)
+            } else {
+                reel
+            }
+        }
+    }    // State hoisting methods for video states
     fun updateVideoState(reelId: String, update: (ReelState) -> ReelState) {
         viewModelScope.launch {
             val currentStates = _videoStates.value.toMutableMap()
@@ -266,6 +314,14 @@ class ReelViewModel @Inject constructor(
                 isVisible = false,
                 selectedReelId = null
             )
+        }
+    }
+
+    suspend fun getCommentsForReel(reelId: String): List<Comment> {
+        return try {
+            reelActionsRepo.getCommentsForReel(reelId)
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 }
