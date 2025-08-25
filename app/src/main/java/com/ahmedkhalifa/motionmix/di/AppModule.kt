@@ -2,7 +2,7 @@ package com.ahmedkhalifa.motionmix.di
 
 import android.app.NotificationManager
 import android.content.Context
-import com.ahmedkhalifa.motionmix.VideoUploadingNotificationHandler
+import com.ahmedkhalifa.motionmix.services.VideoUploadingNotificationHandler
 import com.ahmedkhalifa.motionmix.data.local_data_source.datastore.DataStoreManager
 import com.ahmedkhalifa.motionmix.data.remote_data_source.FireStoreService
 import com.ahmedkhalifa.motionmix.data.remote_data_source.FirebaseAuthenticationService

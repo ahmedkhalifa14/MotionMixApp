@@ -52,7 +52,7 @@ import androidx.media3.ui.PlayerView
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.ahmedkhalifa.motionmix.R
-import com.ahmedkhalifa.motionmix.common.ExoPlayerManager
+import com.ahmedkhalifa.motionmix.services.ExoPlayerManager
 import com.ahmedkhalifa.motionmix.common.utils.Event
 import com.ahmedkhalifa.motionmix.common.utils.ReelState
 import com.ahmedkhalifa.motionmix.common.utils.Resource

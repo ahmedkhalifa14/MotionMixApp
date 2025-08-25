@@ -29,7 +29,7 @@
         android:theme="@style/Theme.MotionMix"
         tools:targetApi="31">
         <activity
-            android:name=".ui.MainActivity"
+            android:name=".ui.main_activity.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.MotionMix">
@@ -46,7 +46,7 @@
             tools:replace="android:theme" />
 
         <service
-            android:name=".VideoUploadService"
+            android:name=".services.VideoUploadService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />

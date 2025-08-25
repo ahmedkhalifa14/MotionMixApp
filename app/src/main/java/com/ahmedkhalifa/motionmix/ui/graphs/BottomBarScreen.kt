@@ -14,31 +14,31 @@ sealed class BottomBarScreen(
     val icon: ImageVector
 ) {
     object Home : BottomBarScreen(
-        route = "REEL",
-        title = "",
+        route = Graph.HomeRoutes.REEL,
+        title = "Home",
         icon = Icons.Default.Home
     )
 
     object Profile : BottomBarScreen(
-        route = "PROFILE",
-        title = "",
+        route = Graph.HomeRoutes.PROFILE,
+        title = "Profile",
         icon = Icons.Default.Person
     )
 
     object Inbox : BottomBarScreen(
-        route = "INBOX",
-        title = "",
+        route = Graph.HomeRoutes.INBOX,
+        title = "Inbox",
         icon = Icons.Filled.MailOutline
     )
 
     object Discover : BottomBarScreen(
-        route = "DISCOVER",
-        title = "",
+        route = Graph.HomeRoutes.DISCOVER,
+        title = "Discover",
         icon = Icons.Outlined.Search
     )
 
     object PostReel : BottomBarScreen(
-        route = "POST_REAL",
+        route = Graph.HomeRoutes.POST_REEL,
         title = "",
         icon = Icons.Default.Add
     )

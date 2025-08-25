@@ -192,48 +192,28 @@ class FireStoreService @Inject constructor(
     }
     suspend fun addComment(reelId: String, comment: Comment): Boolean {
         return try {
-            Log.d("FireStoreService", "🟡 Starting addComment for reel: $reelId")
-            Log.d("FireStoreService", "🟡 Comment data: $comment")
-
-            // ١. تأكد إن الـ reel موجود أصلاً
             val reelDoc = reelsCollection.document(reelId).get().await()
             if (!reelDoc.exists()) {
-                Log.e("FireStoreService", "🔴 Reel doesn't exist: $reelId")
                 return false
             }
 
-            Log.d("FireStoreService", "🟢 Reel exists, adding comment...")
-
-            // ٢. Add comment to subcollection
             val commentRef = reelsCollection
                 .document(reelId)
                 .collection("comments")
                 .document(comment.id)
-
-            Log.d("FireStoreService", "🟡 Firestore path: ${commentRef.path}")
-
             commentRef.set(comment).await()
-            Log.d("FireStoreService", "✅ Comment document set successfully")
 
-            // ٣. Update comments count in the reel document
             reelsCollection.document(reelId)
                 .update("commentsCount", FieldValue.increment(1))
                 .await()
-
-            Log.d("FireStoreService", "✅ Comments count updated successfully")
-
-            // ٤. Verify that the comment was actually added
             val addedComment = commentRef.get().await()
             if (addedComment.exists()) {
-                Log.d("FireStoreService", "✅ Comment verified in Firestore")
                 true
             } else {
-                Log.e("FireStoreService", "🔴 Comment not found after adding!")
                 false
             }
 
         } catch (e: Exception) {
-            Log.e("FireStoreService", "🔴 Exception in addComment: ${e.message}", e)
             false
         }
     }

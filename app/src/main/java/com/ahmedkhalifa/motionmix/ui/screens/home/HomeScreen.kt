@@ -2,45 +2,89 @@ package com.ahmedkhalifa.motionmix.ui.screens.home
 
 import android.annotation.SuppressLint
 import androidx.annotation.OptIn
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.height
-import androidx.compose.material.BottomNavigation
-import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material.ContentAlpha
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarDefaults
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavDestination
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ahmedkhalifa.motionmix.ui.graphs.BottomBarScreen
 import com.ahmedkhalifa.motionmix.ui.graphs.Graph
-import com.ahmedkhalifa.motionmix.ui.theme.AppMainColor
+import com.ahmedkhalifa.motionmix.ui.graphs.detailsNavGraph
+import com.ahmedkhalifa.motionmix.ui.main_activity.ScreenContent
+import com.ahmedkhalifa.motionmix.ui.screens.post_reel.PostReelScreen
+import com.ahmedkhalifa.motionmix.ui.screens.profile.UserProfileScreen
+import com.ahmedkhalifa.motionmix.ui.theme.Montserrat
 
 @OptIn(UnstableApi::class)
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter", "UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun HomeScreen(navController: NavHostController) {
+    val homeNavController = rememberNavController()
+    val navBackStackEntry by homeNavController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+
+    val showBottomBar = currentDestination?.route != Graph.HomeRoutes.POST_REEL
+
     Scaffold(
         bottomBar = {
-            BottomBar(
-                navController = navController
-            )
+            if (showBottomBar) {
+                BottomBar(
+                    navController = homeNavController
+                )
+            }
         }
-    ) {
-        ReelsScreen(navController = navController)
+    ) { paddingValues ->
+        NavHost(
+            navController = homeNavController,
+            startDestination = Graph.HomeRoutes.REEL,
+            modifier = Modifier.padding(paddingValues)
+        ) {
+            composable(route = Graph.HomeRoutes.REEL) {
+                ReelsScreen(navController = homeNavController)
+            }
+            composable(route = Graph.HomeRoutes.DISCOVER) {
+                ScreenContent(
+                    name = BottomBarScreen.Discover.route,
+                    onClick = { }
+                )
+            }
+            composable(route = Graph.HomeRoutes.POST_REEL) {
+                PostReelScreen()
+            }
+            composable(route = Graph.HomeRoutes.INBOX) {
+                ScreenContent(
+                    name = BottomBarScreen.Inbox.route,
+                    onClick = { }
+                )
+            }
+            composable(route = Graph.HomeRoutes.PROFILE) {
+                UserProfileScreen()
+            }
+            detailsNavGraph(navController = homeNavController)
+        }
     }
 }
 
@@ -56,23 +100,18 @@ fun BottomBar(navController: NavHostController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    val bottomBarDestination = screens.any {
-        it.route == currentDestination?.route
-    } || currentDestination?.route == Graph.HomeRoutes.REEL
-    if (bottomBarDestination) {
-        NavigationBar(
-            modifier = Modifier.height(56.dp),
-            containerColor = MaterialTheme.colorScheme.background,
-            tonalElevation = NavigationBarDefaults.Elevation,
-            windowInsets = NavigationBarDefaults.windowInsets,
-        ) {
-            screens.forEach { screen ->
-                AddItem(
-                    screen = screen,
-                    currentDestination = currentDestination,
-                    navController = navController
-                )
-            }
+    NavigationBar(
+        modifier = Modifier.height(64.dp),
+        containerColor = MaterialTheme.colorScheme.background,
+        tonalElevation = NavigationBarDefaults.Elevation,
+        windowInsets = NavigationBarDefaults.windowInsets,
+    ) {
+        screens.forEach { screen ->
+            AddItem(
+                screen = screen,
+                currentDestination = currentDestination,
+                navController = navController
+            )
         }
     }
 }
@@ -83,26 +122,53 @@ fun RowScope.AddItem(
     currentDestination: NavDestination?,
     navController: NavHostController
 ) {
-    BottomNavigationItem(
-        label = {
-            Text(text = screen.title)
-        },
-        icon = {
-            Icon(
-                imageVector = screen.icon,
-                contentDescription = "Navigation Icon",
-                tint = MaterialTheme.colorScheme.onBackground
-            )
-        },
-        selected = currentDestination?.hierarchy?.any {
-            it.route == screen.route
-        } == true,
-        unselectedContentColor = LocalContentColor.current.copy(alpha = ContentAlpha.disabled),
+    val selected = when (screen) {
+        BottomBarScreen.Home -> currentDestination?.route == Graph.HomeRoutes.REEL
+        BottomBarScreen.Profile -> currentDestination?.route == Graph.HomeRoutes.PROFILE
+        BottomBarScreen.Discover -> currentDestination?.route == Graph.HomeRoutes.DISCOVER
+        BottomBarScreen.Inbox -> currentDestination?.route == Graph.HomeRoutes.INBOX
+        BottomBarScreen.PostReel -> currentDestination?.route == Graph.HomeRoutes.POST_REEL
+    }
+
+    NavigationBarItem(
+        selected = selected,
         onClick = {
             navController.navigate(screen.route) {
-                popUpTo(navController.graph.findStartDestination().id)
+                popUpTo(navController.graph.findStartDestination().id) {
+                    saveState = true
+                }
                 launchSingleTop = true
+                restoreState = true
             }
-        }
+        },
+        icon = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = screen.icon,
+                    contentDescription = null,
+                    tint = if (selected) MaterialTheme.colorScheme.onBackground
+                    else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                )
+                Text(
+                    text = screen.title,
+                    fontFamily = Montserrat,
+                    fontSize = 12.sp,
+                    color = if (selected) MaterialTheme.colorScheme.onBackground
+                    else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                )
+            }
+        },
+        label = null,
+        colors = NavigationBarItemDefaults.colors(
+            indicatorColor = Color.Transparent,
+            selectedIconColor = Color.Unspecified,
+            unselectedIconColor = Color.Unspecified
+        )
     )
+
+
+
 }

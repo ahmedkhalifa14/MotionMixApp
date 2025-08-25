@@ -1,9 +1,10 @@
-package com.ahmedkhalifa.motionmix
+package com.ahmedkhalifa.motionmix.services
 
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import androidx.core.net.toUri
+import com.ahmedkhalifa.motionmix.services.VideoUploadingNotificationHandler
 import com.ahmedkhalifa.motionmix.common.utils.UploadEvent
 import com.ahmedkhalifa.motionmix.common.utils.UploadProgressListener
 import com.ahmedkhalifa.motionmix.data.remote_data_source.VideosUploadingUsingFirebaseCloudStorage
@@ -40,7 +41,7 @@ class VideoUploadService : Service() {
         val videoUri = videoUriString.toUri()
 
         startForeground(
-            VideoUploadingNotificationHandler.NOTIFICATION_ID,
+            VideoUploadingNotificationHandler.Companion.NOTIFICATION_ID,
             videoUploadingNotificationHandler.createNotification(0).build()
         )
 

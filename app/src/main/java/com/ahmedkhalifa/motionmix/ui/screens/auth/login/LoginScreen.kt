@@ -36,7 +36,7 @@ import com.ahmedkhalifa.motionmix.ui.composable.SpacerVertical16
 import com.ahmedkhalifa.motionmix.ui.graphs.AuthScreen
 import com.ahmedkhalifa.motionmix.ui.graphs.BottomBarScreen
 import com.ahmedkhalifa.motionmix.ui.graphs.Graph
-import com.ahmedkhalifa.motionmix.ui.screens.AppPreferencesViewModel
+import com.ahmedkhalifa.motionmix.ui.main_activity.AppPreferencesViewModel
 import com.ahmedkhalifa.motionmix.ui.screens.auth.signup.RegisterViewModel
 import com.ahmedkhalifa.motionmix.ui.screens.profile.UserProfileViewModel
 

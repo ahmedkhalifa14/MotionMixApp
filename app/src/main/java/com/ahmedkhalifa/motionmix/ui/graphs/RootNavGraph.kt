@@ -12,7 +12,7 @@ fun RootNavigationGraph(navController: NavHostController) {
     NavHost(
         navController = navController,
         route = Graph.ROOT,
-        startDestination = Graph.SPLASH
+        startDestination = Graph.HOME
     ) {
         composable(route=Graph.SPLASH){
             SplashScreen(navController = navController)
@@ -32,7 +32,7 @@ object Graph {
     object HomeRoutes{
         const val REEL ="reel"
         const val POST_REEL ="post_reel"
-        const val FRIENDS ="friends"
+        const val DISCOVER ="discover"
         const val INBOX ="inbox"
         const val PROFILE ="profile"
     }

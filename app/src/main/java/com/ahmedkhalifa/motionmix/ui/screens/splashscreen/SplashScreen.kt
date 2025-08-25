@@ -23,7 +23,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.ahmedkhalifa.motionmix.R
 import com.ahmedkhalifa.motionmix.ui.graphs.Graph
-import com.ahmedkhalifa.motionmix.ui.screens.AppPreferencesViewModel
+import com.ahmedkhalifa.motionmix.ui.main_activity.AppPreferencesViewModel
 import com.ahmedkhalifa.motionmix.ui.theme.AppMainColor
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.delay

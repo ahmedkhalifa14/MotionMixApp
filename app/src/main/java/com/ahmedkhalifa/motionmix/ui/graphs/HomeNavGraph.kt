@@ -4,42 +4,12 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
-import com.ahmedkhalifa.motionmix.ui.screens.ScreenContent
+import com.ahmedkhalifa.motionmix.ui.main_activity.ScreenContent
 import com.ahmedkhalifa.motionmix.ui.screens.home.HomeScreen
 
 fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
-    navigation(
-        route = Graph.HOME,
-        startDestination = Graph.HomeRoutes.REEL
-    ) {
-        composable(route = Graph.HomeRoutes.REEL) {
-            HomeScreen(navController)
-        }
-        composable(route = Graph.HomeRoutes.PROFILE) {
-            ScreenContent(
-                name = BottomBarScreen.Profile.route,
-                onClick = { }
-            )
-        }
-        composable(route = Graph.HomeRoutes.POST_REEL) {
-            ScreenContent(
-                name = BottomBarScreen.PostReel.route,
-                onClick = { }
-            )
-        }
-        composable(route = Graph.HomeRoutes.FRIENDS) {
-            ScreenContent(
-                name = BottomBarScreen.Discover.route,
-                onClick = { }
-            )
-        }
-        composable(route = Graph.HomeRoutes.INBOX) {
-            ScreenContent(
-                name = BottomBarScreen.Inbox.route,
-                onClick = { }
-            )
-        }
-        detailsNavGraph(navController = navController)
+    composable(route = Graph.HOME) {
+        HomeScreen(navController = navController)
     }
 }
 

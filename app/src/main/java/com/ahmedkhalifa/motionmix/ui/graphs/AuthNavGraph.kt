@@ -3,11 +3,10 @@ package com.ahmedkhalifa.motionmix.ui.graphs
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
-import com.ahmedkhalifa.motionmix.ui.screens.ScreenContent
+import com.ahmedkhalifa.motionmix.ui.main_activity.ScreenContent
 import com.ahmedkhalifa.motionmix.ui.screens.auth.login.LoginScreen
 import com.ahmedkhalifa.motionmix.ui.screens.auth.select_country.SelectCountryScreenContent
 import com.ahmedkhalifa.motionmix.ui.screens.auth.signup.SignupScreen

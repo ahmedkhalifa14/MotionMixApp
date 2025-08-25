@@ -1,4 +1,4 @@
-package com.ahmedkhalifa.motionmix.ui.screens
+package com.ahmedkhalifa.motionmix.ui.main_activity
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
 
 @HiltViewModel
 class AppPreferencesViewModel @Inject constructor(

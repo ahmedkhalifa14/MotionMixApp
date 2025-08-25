@@ -1,6 +1,6 @@
 package com.ahmedkhalifa.motionmix.common.utils
 
-import com.ahmedkhalifa.motionmix.VideoUploadService
+import com.ahmedkhalifa.motionmix.services.VideoUploadService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow

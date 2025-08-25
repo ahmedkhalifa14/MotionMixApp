@@ -1,5 +1,6 @@
-package com.ahmedkhalifa.motionmix
+package com.ahmedkhalifa.motionmix.services
 
+import android.R
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -38,7 +39,7 @@ class VideoUploadingNotificationHandler @Inject constructor(
 
     fun createNotification(progress: Int): NotificationCompat.Builder {
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_menu_upload)
+            .setSmallIcon(R.drawable.ic_menu_upload)
             .setContentTitle("Uploading Video")
             .setPriority(NotificationCompat.PRIORITY_LOW)
 

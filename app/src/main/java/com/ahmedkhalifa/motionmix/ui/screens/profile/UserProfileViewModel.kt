@@ -2,6 +2,7 @@ package com.ahmedkhalifa.motionmix.ui.screens.profile
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ahmedkhalifa.motionmix.common.utils.Event
@@ -37,8 +38,6 @@ class UserProfileViewModel @Inject constructor(
 
     private val _userState = MutableStateFlow(ProfileUiState())
     val userState: StateFlow<ProfileUiState> = _userState.asStateFlow()
-
-
 
     fun saveUserProfileData(user: User,imageUri: Uri?,context: Context) {
         viewModelScope.launch {
