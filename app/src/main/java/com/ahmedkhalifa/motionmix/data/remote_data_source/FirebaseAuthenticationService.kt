@@ -5,6 +5,7 @@ import com.google.firebase.FirebaseException
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
@@ -109,5 +110,10 @@ class FirebaseAuthenticationService @Inject constructor(
     }
     //logout
     fun logout() = firebaseAuth.signOut()
+
+
+    //get current user
+    fun getCurrentUserId(): String? = firebaseAuth.currentUser?.uid
+    fun getCurrentUser(): FirebaseUser? = firebaseAuth.currentUser
 
 }

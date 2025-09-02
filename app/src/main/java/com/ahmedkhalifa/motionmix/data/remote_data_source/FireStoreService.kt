@@ -30,6 +30,7 @@ class FireStoreService @Inject constructor(
 
     ///*******************Reels***********************///
     private val reelsCollection = firebaseFireStore.collection("reels")
+
     // Save Reel Metadata to FireStore
     suspend fun saveReelToFireStore(
         mediaUrl: String,
@@ -63,61 +64,48 @@ class FireStoreService @Inject constructor(
             Result.failure(e)
         }
     }
-    // Use pagination for better performance
-    // In FireStoreService
-// في FireStoreService - أضف logging مفصل
-    suspend fun getReelsPaginated(limit: Long = 10, lastDocument: DocumentSnapshot? = null): Pair<List<Reel>, DocumentSnapshot?> {
+    suspend fun getReelsPaginated(
+        limit: Long = 10,
+        lastDocument: DocumentSnapshot? = null
+    ): Pair<List<Reel>, DocumentSnapshot?> {
         return try {
-            Log.d("FireStoreService", "Getting reels with limit: $limit")
-
             var query = reelsCollection
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .limit(limit)
 
             lastDocument?.let {
                 query = query.startAfter(it)
-                Log.d("FireStoreService", "Starting after document: ${it.id}")
             }
 
-            Log.d("FireStoreService", "Executing query...")
             val snapshot = query.get().await()
-            Log.d("FireStoreService", "Query result: ${snapshot.documents.size} documents found")
 
-            // جيب التعليقات لكل reel باستخدام async
             val reels = snapshot.documents.mapNotNull { doc ->
                 try {
                     if (doc.exists()) {
                         val reel = doc.toObject<Reel>()
                         reel?.let {
-                            // جيب التعليقات من الـ subcollection
                             val comments = getCommentsForReel(it.id)
                             it.copy(comments = comments, id = doc.id)
                         }
                     } else {
-                        Log.w("FireStoreService", "Document ${doc.id} doesn't exist")
                         null
                     }
                 } catch (e: Exception) {
-                    Log.e("FireStoreService", "Error converting document ${doc.id}: ${e.message}", e)
+                    e
                     null
                 }
             }
 
             val lastDoc = snapshot.documents.lastOrNull()
-            Log.d("FireStoreService", "Returning ${reels.size} reels, lastDoc: ${lastDoc?.id}")
-
             Pair(reels, lastDoc)
         } catch (e: Exception) {
-            Log.e("FireStoreService", "Error getting reels: ${e.message}", e)
+            e
             Pair(emptyList(), null)
         }
     }
 
-    // دالة جديدة علشان تجيب التعليقات من الـ subcollection
-     suspend fun getCommentsForReel(reelId: String): List<Comment> {
+    suspend fun getCommentsForReel(reelId: String): List<Comment> {
         return try {
-            Log.d("FireStoreService", "Getting comments for reel: $reelId")
-
             val snapshot = reelsCollection
                 .document(reelId)
                 .collection("comments")
@@ -129,37 +117,17 @@ class FireStoreService @Inject constructor(
                 try {
                     doc.toObject<Comment>()?.copy(id = doc.id)
                 } catch (e: Exception) {
-                    Log.e("FireStoreService", "Error converting comment ${doc.id}: ${e.message}", e)
+                    e
                     null
                 }
             }
 
-            Log.d("FireStoreService", "Found ${comments.size} comments for reel: $reelId")
             comments
         } catch (e: Exception) {
-            Log.e("FireStoreService", "Error getting comments for reel $reelId: ${e.message}", e)
+            e
             emptyList()
         }
-    }// Add compound index: timestamp (descending), isActive (ascending)
-
-
-//    suspend fun getReels(): List<Reel> {
-//        return try {
-//            val snapshot = reelsCollection.get().await()
-//            snapshot.documents.mapNotNull { doc ->
-//                try {
-//                    val reel = doc.toObject<Reel>()
-//                    reel?.copy(
-//                        comments = getComments(reel.id)
-//                    )
-//                } catch (e: Exception) {
-//                    null
-//                }
-//            }
-//        } catch (e: Exception) {
-//            emptyList()
-//        }
-//    }
+    }
 
     suspend fun toggleLike(reelId: String, userId: String, isLiked: Boolean): Reel? {
         val reelRef = reelsCollection.document(reelId)
@@ -187,9 +155,11 @@ class FireStoreService @Inject constructor(
                 )
             }.await()
         } catch (e: Exception) {
+            e
             null
         }
     }
+
     suspend fun addComment(reelId: String, comment: Comment): Boolean {
         return try {
             val reelDoc = reelsCollection.document(reelId).get().await()
@@ -207,13 +177,9 @@ class FireStoreService @Inject constructor(
                 .update("commentsCount", FieldValue.increment(1))
                 .await()
             val addedComment = commentRef.get().await()
-            if (addedComment.exists()) {
-                true
-            } else {
-                false
-            }
-
+            addedComment.exists()
         } catch (e: Exception) {
+            e
             false
         }
     }
@@ -251,6 +217,7 @@ class FireStoreService @Inject constructor(
                 null
             }
         } catch (e: Exception) {
+            e
             null
         }
     }
@@ -292,32 +259,23 @@ class FireStoreService @Inject constructor(
             .child("profile_images/${currentUser.uid}/${UUID.randomUUID()}.jpg")
 
         return try {
-            Log.d("FirebaseService", "Starting upload for URI: $imageUri")
-
             // Check if file exists first
             val contentResolver = context.contentResolver
 
             // Try to get the actual file data immediately
             val inputStream = contentResolver.openInputStream(imageUri)
             if (inputStream == null) {
-                Log.e("FirebaseService", "Cannot open input stream for URI: $imageUri")
                 return null
             }
 
             // Read all bytes into memory to avoid file deletion issues
             val imageBytes = inputStream.use { it.readBytes() }
-            Log.d("FirebaseService", "Read ${imageBytes.size} bytes from image")
-
             // Upload using byte array
             val uploadTask = storageReference.putBytes(imageBytes).await()
-            Log.d("FirebaseService", "Upload task completed")
-
             val downloadUrl = storageReference.downloadUrl.await().toString()
-            Log.d("FirebaseService", "Image uploaded successfully: $downloadUrl")
-
             downloadUrl
         } catch (e: Exception) {
-            Log.e("FirebaseService", "Image upload failed: ${e.message}", e)
+            e
             null
         }
     }
