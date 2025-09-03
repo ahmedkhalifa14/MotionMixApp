@@ -40,7 +40,10 @@ import com.ahmedkhalifa.motionmix.common.utils.EventObserver
 import com.ahmedkhalifa.motionmix.common.utils.isPasswordValid
 import com.ahmedkhalifa.motionmix.ui.composable.CreatePasswordHeader
 import com.ahmedkhalifa.motionmix.ui.composable.SpacerVertical16
+import com.ahmedkhalifa.motionmix.ui.graphs.AuthScreen
+import com.ahmedkhalifa.motionmix.ui.graphs.Graph
 import com.ahmedkhalifa.motionmix.ui.screens.auth.signup.RegisterViewModel
+import com.ahmedkhalifa.motionmix.ui.theme.AppMainColor
 import com.ahmedkhalifa.motionmix.ui.theme.FooterColor
 import com.ahmedkhalifa.motionmix.ui.theme.Montserrat
 
@@ -68,8 +71,13 @@ fun CreatePasswordScreen(
                     Toast.makeText(
                         context,
                         context.getString(R.string.we_will_send_an_email_to_verify_your_email_address),
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_LONG
                     ).show()
+                    navController.navigate(AuthScreen.UserProfileForm.route) {
+                        popUpTo(AuthScreen.Password.route) {
+                            inclusive = true
+                        }
+                    }
                 }
             )
         )
@@ -131,7 +139,7 @@ fun CreatePasswordScreenContent(
             onValueChange = { passwordState = it },
             label = { Text(stringResource(R.string.enter_password)) },
             colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                focusedIndicatorColor = AppMainColor,
                 unfocusedIndicatorColor = MaterialTheme.colorScheme.onPrimary,
                 focusedContainerColor = MaterialTheme.colorScheme.onPrimary,
                 unfocusedContainerColor = MaterialTheme.colorScheme.onPrimary,
@@ -180,7 +188,7 @@ fun CreatePasswordScreenContent(
             shape = RoundedCornerShape(16.dp),
             border = BorderStroke(1.dp, FooterColor),
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = AppMainColor,
                 contentColor = Color.White
             ),
             enabled = isPasswordValid(passwordState)
@@ -199,8 +207,6 @@ fun CreatePasswordScreenContent(
 
         }
     }
-
-
 }
 
 @Composable

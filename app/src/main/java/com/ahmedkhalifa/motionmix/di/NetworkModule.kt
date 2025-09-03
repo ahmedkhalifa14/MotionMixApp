@@ -2,6 +2,10 @@ package com.ahmedkhalifa.motionmix.di
 
 import com.ahmedkhalifa.motionmix.data.remote_data_source.FirebaseAuthenticationService
 import com.ahmedkhalifa.motionmix.data.remote_data_source.VideosUploadingUsingFirebaseCloudStorage
+import com.ahmedkhalifa.motionmix.data.remote_data_source.chat.ChatFireStoreInterface
+import com.ahmedkhalifa.motionmix.data.remote_data_source.chat.ChatFireStoreService
+import com.ahmedkhalifa.motionmix.data.remote_data_source.chat.ChatFirebaseStorage
+import com.ahmedkhalifa.motionmix.data.remote_data_source.chat.ChatMediaInterface
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -43,6 +47,19 @@ object NetworkModule {
         firebaseAuth: FirebaseAuth,
     ): VideosUploadingUsingFirebaseCloudStorage =
         VideosUploadingUsingFirebaseCloudStorage(firebaseStorage, firebaseAuth)
+
+    @Provides
+    @Singleton
+    fun provideChatFirebaseStorage(
+        firebaseStorage: FirebaseStorage
+    ): ChatMediaInterface =
+        ChatFirebaseStorage(firebaseStorage)
+
+    @Provides
+    @Singleton
+    fun provideChatFireStoreService(
+        firestore: FirebaseFirestore
+    ): ChatFireStoreInterface = ChatFireStoreService(firestore)
 
 
 }

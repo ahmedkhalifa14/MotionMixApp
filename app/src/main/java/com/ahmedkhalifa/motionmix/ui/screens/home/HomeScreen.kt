@@ -31,9 +31,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ahmedkhalifa.motionmix.ui.graphs.BottomBarScreen
+import com.ahmedkhalifa.motionmix.ui.graphs.ChatScreen
 import com.ahmedkhalifa.motionmix.ui.graphs.Graph
-import com.ahmedkhalifa.motionmix.ui.graphs.detailsNavGraph
+import com.ahmedkhalifa.motionmix.ui.graphs.chatNavGraph
 import com.ahmedkhalifa.motionmix.ui.main_activity.ScreenContent
+import com.ahmedkhalifa.motionmix.ui.screens.inbox.ConversationsListScreen
 import com.ahmedkhalifa.motionmix.ui.screens.post_reel.PostReelScreen
 import com.ahmedkhalifa.motionmix.ui.screens.profile.UserProfileScreen
 import com.ahmedkhalifa.motionmix.ui.theme.Montserrat
@@ -75,15 +77,19 @@ fun HomeScreen(navController: NavHostController) {
                 PostReelScreen()
             }
             composable(route = Graph.HomeRoutes.INBOX) {
-                ScreenContent(
-                    name = BottomBarScreen.Inbox.route,
-                    onClick = { }
+                ConversationsListScreen(
+                    onConversationClick = { conversationId ->
+                        homeNavController.navigate(ChatScreen.Chat.createRoute(conversationId))
+                    },
+                    onNewChatClick = {
+                        homeNavController.navigate(ChatScreen.NewChat.route)
+                    }
                 )
             }
             composable(route = Graph.HomeRoutes.PROFILE) {
                 UserProfileScreen()
             }
-            detailsNavGraph(navController = homeNavController)
+            chatNavGraph(navController = homeNavController)
         }
     }
 }
@@ -168,7 +174,4 @@ fun RowScope.AddItem(
             unselectedIconColor = Color.Unspecified
         )
     )
-
-
-
 }

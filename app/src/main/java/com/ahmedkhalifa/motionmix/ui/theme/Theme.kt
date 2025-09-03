@@ -15,7 +15,7 @@ import androidx.compose.ui.platform.LocalView
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 private val DarkColorScheme = darkColorScheme(
-    primary = AppMainColor,
+    primary = Color(0xFF003366),
     onPrimary = Color.Black,
     secondary = PurpleGrey80,
     onSecondary = Color.Black,
@@ -32,7 +32,7 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = AppMainColor,
+    primary = Color(0xFF003366),
     onPrimary = Color.White,
     secondary = PurpleGrey40,
     onSecondary = Color.White,

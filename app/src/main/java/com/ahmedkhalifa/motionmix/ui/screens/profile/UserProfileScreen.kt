@@ -1,7 +1,5 @@
 package com.ahmedkhalifa.motionmix.ui.screens.profile
 
-import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -43,8 +41,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,10 +49,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -228,19 +222,19 @@ fun UserProfileScreenContent(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = user.firstName + " " + user.lastName,
-                            fontSize = 22.sp,
+                            text = user.firstName+user.lastName,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground,
                             fontFamily = Montserrat
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(2.dp))
                         Icon(
                             imageVector = Icons.Default.KeyboardArrowDown,
                             contentDescription = "Dropdown",
                             tint = MaterialTheme.colorScheme.onBackground
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(2.dp))
                         Text(
                             text = "Edit",
                             fontSize = 16.sp,

@@ -79,7 +79,12 @@ fun SignupScreen(
             iconResId = R.drawable.profile_account_icon,
             onClick = {
                 Toast.makeText(context, "clicked", Toast.LENGTH_LONG).show()
-                navController.navigate("EMAIL_PHONE_TAB/Register")
+                navController.navigate("EMAIL_PHONE_TAB/Register") {
+                    popUpTo(AuthScreen.SignUp.route) {
+                        inclusive = true
+                    }
+                }
+
             },
             tint = MaterialTheme.colorScheme.onBackground
         ),
@@ -118,7 +123,6 @@ fun SignupScreen(
         onQuestionClick = { },
         onCloseClick = {},
         onClickAuth = {
-            Toast.makeText(context, "clicked", Toast.LENGTH_LONG).show()
             navController.navigate(AuthScreen.Login.route)
         },
     )

@@ -1,7 +1,6 @@
 package com.ahmedkhalifa.motionmix.ui.screens.auth.userProfile
 
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -69,6 +68,8 @@ import com.ahmedkhalifa.motionmix.services.LocationService
 import com.ahmedkhalifa.motionmix.ui.composable.CustomTextField
 import com.ahmedkhalifa.motionmix.ui.composable.LocationTextField
 import com.ahmedkhalifa.motionmix.ui.composable.ProfilePictureSection
+import com.ahmedkhalifa.motionmix.ui.graphs.AuthScreen
+import com.ahmedkhalifa.motionmix.ui.graphs.Graph
 import com.ahmedkhalifa.motionmix.ui.screens.profile.UserProfileViewModel
 import com.ahmedkhalifa.motionmix.ui.theme.AppMainColor
 import kotlinx.coroutines.launch
@@ -91,9 +92,9 @@ fun UserProfileFormScreen(
                 context,
                 context.getString(R.string.user_profile_data_saved_successfully), Toast.LENGTH_SHORT
             ).show()
-            // navController.navigate(Graph.HOME) {
-            //     popUpTo(AuthScreen.UserProfileForm.route) { inclusive = true }
-            // }
+            navController.navigate(AuthScreen.Login.route) {
+                popUpTo(AuthScreen.UserProfileForm.route) { inclusive = true }
+            }
         },
         onError = { errorMessage ->
             isLoading = false
@@ -161,6 +162,7 @@ fun UserProfileFormScreenContent(
                         userData = userData.copy(location = result.address)
                         locationError = null
                     }
+
                     is LocationResult.Error -> {
                         locationError = result.message
                     }
@@ -236,7 +238,6 @@ fun UserProfileFormScreenContent(
                 onProfilePictureChange = { uri ->
                     profilePictureUri = uri
                     userData = userData.copy(profilePictureLink = uri?.toString() ?: "")
-                    Log.d("imageUrl", profilePictureUri.toString() + "  s")
                 }
             )
 
@@ -332,6 +333,7 @@ fun UserProfileFormScreenContent(
                                         userData = userData.copy(location = result.address)
                                         locationError = null
                                     }
+
                                     is LocationResult.Error -> {
                                         locationError = result.message
                                     }

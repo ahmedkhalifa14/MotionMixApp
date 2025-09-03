@@ -6,14 +6,18 @@ import com.ahmedkhalifa.motionmix.services.VideoUploadingNotificationHandler
 import com.ahmedkhalifa.motionmix.data.local_data_source.datastore.DataStoreManager
 import com.ahmedkhalifa.motionmix.data.remote_data_source.FireStoreService
 import com.ahmedkhalifa.motionmix.data.remote_data_source.FirebaseAuthenticationService
+import com.ahmedkhalifa.motionmix.data.remote_data_source.chat.ChatFireStoreInterface
+import com.ahmedkhalifa.motionmix.data.remote_data_source.chat.ChatMediaInterface
 import com.ahmedkhalifa.motionmix.data.repository.app_pref.AppPreferencesRepoImpl
 import com.ahmedkhalifa.motionmix.data.repository.auth.AuthRepoImpl
+import com.ahmedkhalifa.motionmix.data.repository.chat.ChatRepositoryImpl
 import com.ahmedkhalifa.motionmix.data.repository.post_reel.ReelRepositoryImpl
 import com.ahmedkhalifa.motionmix.data.repository.post_reel.VideoUploadRepositoryImpl
 import com.ahmedkhalifa.motionmix.data.repository.reel_actions.ReelActionsRepoImpl
 import com.ahmedkhalifa.motionmix.data.repository.user_profile.UserProfileRepoImpl
 import com.ahmedkhalifa.motionmix.domain.repo.app_preferences.AppPreferencesRepo
 import com.ahmedkhalifa.motionmix.domain.repo.auth.AuthRepo
+import com.ahmedkhalifa.motionmix.domain.repo.chat.ChatRepository
 import com.ahmedkhalifa.motionmix.domain.repo.reel_actions.ReelActionsRepo
 import com.ahmedkhalifa.motionmix.domain.repo.user_profile.UserProfileRepo
 import com.ahmedkhalifa.motionmix.domain.repo.video_upload.ReelRepository
@@ -93,6 +97,14 @@ object AppModule {
     fun provideReelActionsRepo(
         fireStoreService: FireStoreService
     ): ReelActionsRepo = ReelActionsRepoImpl(fireStoreService)
+
+
+    @Provides
+    fun provideChatRepo(
+        chatFireStoreInterface: ChatFireStoreInterface,
+        chatMediaInterface: ChatMediaInterface,
+        firebaseAuthenticationService: FirebaseAuthenticationService
+    ): ChatRepository = ChatRepositoryImpl(chatFireStoreInterface,chatMediaInterface,firebaseAuthenticationService)
 
     @Provides
     fun provideUploadVideoUseCase(
