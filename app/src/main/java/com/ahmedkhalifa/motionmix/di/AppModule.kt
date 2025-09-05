@@ -11,6 +11,7 @@ import com.ahmedkhalifa.motionmix.data.remote_data_source.chat.ChatMediaInterfac
 import com.ahmedkhalifa.motionmix.data.repository.app_pref.AppPreferencesRepoImpl
 import com.ahmedkhalifa.motionmix.data.repository.auth.AuthRepoImpl
 import com.ahmedkhalifa.motionmix.data.repository.chat.ChatRepositoryImpl
+import com.ahmedkhalifa.motionmix.data.repository.follow.FollowRepositoryImpl
 import com.ahmedkhalifa.motionmix.data.repository.post_reel.ReelRepositoryImpl
 import com.ahmedkhalifa.motionmix.data.repository.post_reel.VideoUploadRepositoryImpl
 import com.ahmedkhalifa.motionmix.data.repository.reel_actions.ReelActionsRepoImpl
@@ -18,6 +19,7 @@ import com.ahmedkhalifa.motionmix.data.repository.user_profile.UserProfileRepoIm
 import com.ahmedkhalifa.motionmix.domain.repo.app_preferences.AppPreferencesRepo
 import com.ahmedkhalifa.motionmix.domain.repo.auth.AuthRepo
 import com.ahmedkhalifa.motionmix.domain.repo.chat.ChatRepository
+import com.ahmedkhalifa.motionmix.domain.repo.follow.FollowRepository
 import com.ahmedkhalifa.motionmix.domain.repo.reel_actions.ReelActionsRepo
 import com.ahmedkhalifa.motionmix.domain.repo.user_profile.UserProfileRepo
 import com.ahmedkhalifa.motionmix.domain.repo.video_upload.ReelRepository
@@ -105,6 +107,13 @@ object AppModule {
         chatMediaInterface: ChatMediaInterface,
         firebaseAuthenticationService: FirebaseAuthenticationService
     ): ChatRepository = ChatRepositoryImpl(chatFireStoreInterface,chatMediaInterface,firebaseAuthenticationService)
+
+    @Provides
+    @Singleton
+    fun provideFollowRepository(fireStoreService: FireStoreService): FollowRepository =
+        FollowRepositoryImpl(fireStoreService)
+
+
 
     @Provides
     fun provideUploadVideoUseCase(

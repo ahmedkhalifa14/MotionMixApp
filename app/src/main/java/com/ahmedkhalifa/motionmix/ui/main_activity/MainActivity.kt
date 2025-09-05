@@ -7,6 +7,7 @@ import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.compose.rememberNavController
 import com.ahmedkhalifa.motionmix.ui.graphs.RootNavigationGraph
+import com.ahmedkhalifa.motionmix.ui.screens.follow.FollowersAndFollowingScreen
 import com.ahmedkhalifa.motionmix.ui.theme.MotionMixTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -29,7 +30,9 @@ class MainActivity : ComponentActivity() {
                 //PostReelScreen()
                 // ReelsScreen(rememberNavController())
                 //UserProfileFormScreen(rememberNavController())
-                RootNavigationGraph(navController = rememberNavController())
+              //  RootNavigationGraph(navController = rememberNavController())
+
+                FollowersAndFollowingScreen()
             }
 
         }

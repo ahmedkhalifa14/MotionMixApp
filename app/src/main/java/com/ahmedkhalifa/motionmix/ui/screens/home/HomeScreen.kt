@@ -78,12 +78,12 @@ fun HomeScreen(navController: NavHostController) {
             }
             composable(route = Graph.HomeRoutes.INBOX) {
                 ConversationsListScreen(
-                    onConversationClick = { conversationId ->
-                        homeNavController.navigate(ChatScreen.Chat.createRoute(conversationId))
-                    },
-                    onNewChatClick = {
-                        homeNavController.navigate(ChatScreen.NewChat.route)
-                    }
+//                    onConversationClick = { conversationId ->
+//                        homeNavController.navigate(ChatScreen.Chat.createRoute(conversationId))
+//                    },
+//                    onNewChatClick = {
+//                        homeNavController.navigate(ChatScreen.NewChat.route)
+//                    }
                 )
             }
             composable(route = Graph.HomeRoutes.PROFILE) {

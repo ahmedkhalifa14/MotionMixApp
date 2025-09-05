@@ -2,6 +2,8 @@ package com.ahmedkhalifa.motionmix.data.repository.user_profile
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.ahmedkhalifa.motionmix.common.utils.Resource
 import com.ahmedkhalifa.motionmix.common.utils.Utils.tryCatch
 import com.ahmedkhalifa.motionmix.data.model.User
@@ -23,6 +25,7 @@ class UserProfileRepoImpl @Inject constructor(
         }
 
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override suspend fun getUserInfo(): Resource<User?> =
         withContext(Dispatchers.IO) {
             tryCatch {

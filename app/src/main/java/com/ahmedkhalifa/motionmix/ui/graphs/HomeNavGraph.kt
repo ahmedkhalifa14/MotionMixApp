@@ -50,12 +50,12 @@ fun NavGraphBuilder.chatNavGraph(navController: NavHostController) {
     ) {
         composable(route = ChatScreen.Conversations.route) {
             ConversationsListScreen(
-                onConversationClick = { conversationId ->
-                    navController.navigate(ChatScreen.Chat.createRoute(conversationId))
-                },
-                onNewChatClick = {
-                    navController.navigate(ChatScreen.NewChat.route)
-                }
+//                onConversationClick = { conversationId ->
+//                    navController.navigate(ChatScreen.Chat.createRoute(conversationId))
+//                },
+//                onNewChatClick = {
+//                    navController.navigate(ChatScreen.NewChat.route)
+//                }
             )
         }
         composable(

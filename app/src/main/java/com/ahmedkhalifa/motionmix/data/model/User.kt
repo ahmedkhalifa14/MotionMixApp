@@ -2,6 +2,7 @@ package com.ahmedkhalifa.motionmix.data.model
 
 
 data class User(
+    val userId: String="",
     val firstName: String = "",
     val lastName: String = "",
     val username: String = "",
@@ -14,5 +15,5 @@ data class User(
     val profilePictureLink: String = "",
     val numberOfFollowers: Int = 0,
     val numberOfFollowing: Int = 0,
-    val likes:Int=0
+    val likes: Int = 0
 )
